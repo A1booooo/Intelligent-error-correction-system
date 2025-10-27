@@ -19,7 +19,8 @@ function Router() {
           </Route>
         </Route>
       </Routes>
-    </BrowserRouter>)
+    </BrowserRouter>
+  );
 }
 
-export default Router
+export default Router;
