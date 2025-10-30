@@ -17,5 +17,16 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
+  {
+    // React 配置
+    settings: {
+      react: {
+        version: 'detect', // 自动检测 React 版本
+      },
+    },
+    rules: {
+      'react/react-in-jsx-scope': 'off', // 关闭该规则，因为使用了新的 JSX 转换
+    },
+  },
   prettierConfig,
 ]);
