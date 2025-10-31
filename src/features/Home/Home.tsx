@@ -11,12 +11,13 @@ import {
   TrendingUp,
   RefreshCw,
 } from 'lucide-react';
+import { ChartLineMultiple } from '@/components/layout/ChartLineMultiple';
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6 overflow-auto">
+    <div className="flex flex-1 flex-col gap-6 px-6 overflow-auto">
       {/* 学习概况 */}
-      <section>
+      <section className="">
         <h2 className="text-lg font-semibold mb-4">学习概况</h2>
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="shadow-sm">
@@ -139,10 +140,10 @@ export default function Home() {
       </section>
 
       {/* 快捷入口和近期学习动画 */}
-      <section className="grid gap-4 md:grid-cols-[300px_1fr]">
-        <div>
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col">
           <h2 className="text-lg font-semibold mb-4">快捷入口</h2>
-          <Card className="shadow-sm">
+          <Card className="shadow-sm flex-1">
             <CardContent className="p-4">
               <div className="grid grid-cols-1 gap-3">
                 <Button
@@ -179,45 +180,25 @@ export default function Home() {
           </Card>
         </div>
 
-        <div>
+        <div className="flex flex-col">
           <h2 className="text-lg font-semibold mb-4">近期学习动画</h2>
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="space-y-3 mb-4">
+          <Card className="shadow-sm flex-1">
+            <CardContent className="flex">
+              <div className="space-y-3 mb-4 flex-[2]">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm">最近1-5题组错题数</span>
-                  <span className="text-sm text-muted-foreground ml-auto">
-                    480
-                  </span>
+                  <span className="text-sm">最近上传了5道错题</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  <span className="text-sm">本周新增7项错题</span>
-                  <span className="text-sm text-muted-foreground ml-auto">
-                    520
-                  </span>
+                  <span className="text-sm">本周复盘了3道错题</span>
+                </div>
+                <div className="text-sm text-muted-foreground mb-4">
+                  最近和AI讨论了一元二次函数，圆锥曲线知识点
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground mb-4">
-                最近5周的数据趋势，一元二次函数，预期在接接给我重点复习
-              </div>
-              {/* 简易的图表占位符 */}
-              <div className="h-[200px] bg-muted/30 rounded-lg flex items-end justify-around gap-2 p-4">
-                {[40, 35, 50, 45, 55, 48, 52].map((height, index) => (
-                  <div
-                    key={index}
-                    className="flex-1 flex flex-col items-center gap-1"
-                  >
-                    <div
-                      className="w-full bg-blue-500/50 rounded-t transition-all hover:bg-blue-500"
-                      style={{ height: `${height}%` }}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {index + 1}周
-                    </span>
-                  </div>
-                ))}
+              <div className="flex-[2]">
+                <ChartLineMultiple />
               </div>
             </CardContent>
           </Card>
