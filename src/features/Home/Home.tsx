@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +16,8 @@ import {
 import { ChartLineMultiple } from '@/components/layout/ChartLineMultiple';
 
 export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 overflow-auto">
       {/* 学习概况 */}
@@ -148,7 +152,8 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-3">
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-4"
+                  className="w-full justify-start gap-3 h-auto py-4 cursor-pointer"
+                  onClick={() => navigate('/upload-question')}
                 >
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Upload className="size-5 text-primary" />
@@ -158,7 +163,8 @@ export default function Home() {
 
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-4"
+                  className="w-full justify-start gap-3 h-auto py-4 cursor-pointer"
+                  onClick={() => navigate('/my-question')}
                 >
                   <div className="p-2 rounded-lg bg-primary/10">
                     <BookOpen className="size-5 text-primary" />
@@ -168,7 +174,8 @@ export default function Home() {
 
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-4"
+                  className="w-full justify-start gap-3 h-auto py-4 cursor-pointer"
+                  onClick={() => navigate('/knowledge-base')}
                 >
                   <div className="p-2 rounded-lg bg-primary/10">
                     <List className="size-5 text-primary" />
