@@ -9,11 +9,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus } from 'lucide-react';
+import { Plus, StopCircle, Loader2 } from 'lucide-react';
+import { useStreamingAI } from '@/hooks/useStreamingAI';
 
 export default function UploadQuestionPage() {
   const [originalQuestion, setOriginalQuestion] = useState('');
-  const [aiSolution, setAiSolution] = useState('');
+
+  const {
+    content: aiSolution,
+    isLoading: isAILoading,
+    streamAIResponse,
+    stopStreaming,
+  } = useStreamingAI({
+    url: '/api/ai/solve-question', // 替换为实际API地址
+    onComplete: () => {
+      console.log('AI解答完成');
+    },
+    onError: (error) => {
+      console.error('AI解答错误:', error);
+    },
+  });
+
   const [errorReasons, setErrorReasons] = useState({
     careless: false,
     knowledgeGap: false,
@@ -43,6 +59,16 @@ export default function UploadQuestionPage() {
     }));
   };
 
+  // 提交题目获取AI解答
+  const handleGetAISolution = async () => {
+    if (!originalQuestion.trim()) {
+      alert('请先输入题目内容');
+      return;
+    }
+
+    await streamAIResponse(originalQuestion);
+  };
+
   return (
     <div className="bg-background p-6 h-[93svh]">
       {/* 主内容区 */}
@@ -62,20 +88,55 @@ export default function UploadQuestionPage() {
                 className="min-h-[200px] resize-none"
               />
             </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleGetAISolution}
+                disabled={isAILoading || !originalQuestion.trim()}
+                className="w-full"
+              >
+                {isAILoading ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    生成中...
+                  </>
+                ) : (
+                  '获取AI解答'
+                )}
+              </Button>
+            </CardFooter>
           </Card>
 
           {/* AI题解卡片 */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg">AI题解</CardTitle>
+              {isAILoading && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={stopStreaming}
+                  className="text-destructive"
+                >
+                  <StopCircle className="size-4 mr-2" />
+                  停止生成
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="overflow-y-auto">
-              <Textarea
-                placeholder="AI生成的题解将显示在这里..."
-                value={aiSolution}
-                onChange={(e) => setAiSolution(e.target.value)}
-                className="min-h-[200px] resize-none"
-              />
+              {aiSolution ? (
+                <div className="whitespace-pre-wrap text-foreground">
+                  {aiSolution}
+                  {isAILoading && (
+                    <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
+                  )}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-center py-8">
+                  {isAILoading
+                    ? '正在生成解答...'
+                    : 'AI生成的题解将显示在这里...'}
+                </div>
+              )}
             </CardContent>
           </Card>
 
