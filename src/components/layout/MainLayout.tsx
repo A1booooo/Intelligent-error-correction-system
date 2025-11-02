@@ -1,5 +1,15 @@
-import { Outlet } from 'react-router-dom';
+import { useNavigate, Outlet } from "react-router-dom";
 
-export default function MainLayout() {
-  return <Outlet />;
+function MainLayout() {
+  const navigate = useNavigate();
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>Main Layout</h1>
+      <button onClick={() => navigate("/home")}>进入首页</button>
+      <Outlet />
+    </div>
+  );
 }
+
+export default MainLayout;
