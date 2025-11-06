@@ -152,7 +152,7 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-3">
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-4 cursor-pointer"
+                  className="w-full justify-start gap-3 h-auto py-4 cursor-pointer "
                   onClick={() => navigate('/upload-question')}
                 >
                   <div className="p-2 rounded-lg bg-primary/10">

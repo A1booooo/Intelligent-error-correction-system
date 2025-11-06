@@ -31,7 +31,7 @@ export function NavMain({
             className={
               pathname.includes(item.url)
                 ? 'bg-primary text-primary-foreground pointer-events-none'
-                : 'cursor-pointer'
+                : 'cursor-pointer transition-all duration-200'
             }
             onClick={() => navigate(item.url)}
           >

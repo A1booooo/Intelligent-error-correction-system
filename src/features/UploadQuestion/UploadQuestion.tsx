@@ -1,259 +1,170 @@
-import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, StopCircle, Loader2 } from 'lucide-react';
-import { useStreamingAI } from '@/hooks/useStreamingAI';
+import { CloudUpload, PencilLine, Lightbulb, Redo2 } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function UploadQuestionPage() {
-  const [originalQuestion, setOriginalQuestion] = useState('');
+  const navigate = useNavigate();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const {
-    content: aiSolution,
-    isLoading: isAILoading,
-    streamAIResponse,
-    stopStreaming,
-  } = useStreamingAI({
-    url: '/api/ai/solve-question', // 替换为实际API地址
-    onComplete: () => {
-      console.log('AI解答完成');
-    },
-    onError: (error) => {
-      console.error('AI解答错误:', error);
-    },
-  });
-
-  const [errorReasons, setErrorReasons] = useState({
-    careless: false,
-    knowledgeGap: false,
-    calculationError: false,
-    timeShortage: false,
-    other: false,
-  });
-
-  const errorReasonsList = [
-    { id: 'careless', label: '重心马虎', color: 'bg-primary' },
-    { id: 'knowledgeGap', label: '知识点不熟悉', color: 'bg-primary' },
-    { id: 'calculationError', label: '计算错误', color: 'bg-primary' },
-    { id: 'timeShortage', label: '时间不够', color: 'bg-primary' },
-    { id: 'other', label: '其他：', color: 'bg-primary' },
-  ];
-
-  const quickQuestions = [
-    '继续一种新题继续表达系统',
-    '请再做一种考试重点',
-    '有哪一个考察重点和解析？',
-  ];
-
-  const handleErrorReasonChange = (reasonId: string) => {
-    setErrorReasons((prev) => ({
-      ...prev,
-      [reasonId]: !prev[reasonId as keyof typeof prev],
-    }));
-  };
-
-  // 提交题目获取AI解答
-  const handleGetAISolution = async () => {
-    if (!originalQuestion.trim()) {
-      alert('请先输入题目内容');
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      alert('请选择文件！');
       return;
     }
 
-    await streamAIResponse(originalQuestion);
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+    let fileType = '';
+    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') fileType = 'image';
+    else if (ext === 'pdf') fileType = 'pdf';
+    else if (ext === 'doc' || ext === 'docx') fileType = 'word';
+    else {
+      alert('文件类型不支持！');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('type', fileType);
+
+    try {
+      /* const res = await axios.post('http://localhost:3000/upload', formData); */
+      navigate('/upload-question/question-detail', {
+        state: { file: selectedFile },
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
   };
 
   return (
-    <div className="bg-background p-6 h-[93svh]">
-      {/* 主内容区 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左侧区域 - 原题和AI题解 */}
-        <div className="lg:col-span-5 grid grid-rows-[auto_auto_0.5fr] gap-4">
-          {/* 原题卡片 */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">原题</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto">
-              <Textarea
-                placeholder="请输入题目内容..."
-                value={originalQuestion}
-                onChange={(e) => setOriginalQuestion(e.target.value)}
-                className="min-h-[200px] resize-none"
+    <div className="bg-background p-6 h-[93svh] overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+        <div className="lg:col-span-7 gap-4 flex flex-col">
+          <h2 className="text-3xl font-semibold mb-0">智能错题</h2>
+          <p className="text-middle text-muted-foreground mb-0">
+            上传错题图片，系统将自动分析错题
+          </p>
+
+          <div className="flex-1 flex flex-col gap-4">
+            {/* 上传区域 */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-upload')?.click()}
+              className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 ${
+                isDragging
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50'
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center gap-3 p-8">
+                <CloudUpload
+                  className={`w-16 h-16 ${
+                    isDragging ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                />
+                <div className="text-center">
+                  <p className="text-lg font-medium">
+                    {selectedFile ? selectedFile.name : '点击或拖拽文件上传'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    支持 jpg、word、pdf 格式
+                  </p>
+                </div>
+              </div>
+
+              {/* 隐藏 input */}
+              <Input
+                id="file-upload"
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept=".jpg,.jpeg,.png,.doc,.docx,.pdf"
               />
-            </CardContent>
-            <CardFooter>
-              <Button
-                onClick={handleGetAISolution}
-                disabled={isAILoading || !originalQuestion.trim()}
-                className="w-full"
-              >
-                {isAILoading ? (
-                  <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                    生成中...
-                  </>
-                ) : (
-                  '获取AI解答'
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+            </div>
 
-          {/* AI题解卡片 */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">AI题解</CardTitle>
-              {isAILoading && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={stopStreaming}
-                  className="text-destructive"
-                >
-                  <StopCircle className="size-4 mr-2" />
-                  停止生成
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent className="overflow-y-auto">
-              {aiSolution ? (
-                <div className="whitespace-pre-wrap text-foreground">
-                  {aiSolution}
-                  {isAILoading && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
-                  )}
-                </div>
-              ) : (
-                <div className="text-muted-foreground text-center py-8">
-                  {isAILoading
-                    ? '正在生成解答...'
-                    : 'AI生成的题解将显示在这里...'}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 理解确认区域 */}
-          <Card className="shadow-lg">
-            <CardContent className="flex items-center justify-between p-4">
-              <span className="text-foreground font-medium">你看懂了吗？</span>
-              <div className="flex gap-3">
-                <Button variant="default" className="shadow-md">
-                  看懂了 😊
-                </Button>
-                <Button variant="secondary" className="shadow-md">
-                  没看懂 😢
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <Button className="cursor-pointer" onClick={handleFileUpload}>
+              确认
+            </Button>
+          </div>
         </div>
 
-        {/* 中间区域 - 错因分析和知识点 */}
-        <div className="lg:col-span-3 grid grid-rows-[1fr_1fr_1fr] gap-4">
-          {/* 错因分析 */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">错因分析</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {errorReasonsList.map((reason) => (
-                <div key={reason.id} className="flex items-center gap-3">
-                  <div className={`size-2 rounded-full ${reason.color}`} />
-                  <label
-                    htmlFor={reason.id}
-                    className="flex flex-1 items-center gap-2 cursor-pointer"
-                  >
-                    <span className="text-sm text-foreground">
-                      {reason.label}
-                    </span>
-                  </label>
-                  <Checkbox
-                    checked={
-                      errorReasons[reason.id as keyof typeof errorReasons]
-                    }
-                    onCheckedChange={() => handleErrorReasonChange(reason.id)}
-                    id={reason.id}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* 知识点归属 */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">知识点归属</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                深度识别中...
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 注意事项 */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">注意事项</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                深度学习中...
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 右侧区域 - AI问答区 */}
-        <div className="lg:col-span-4 space-y-6">
-          <Card className="shadow-lg h-full flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-lg">AI问答区</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-1">
-              {/* 说明文字 */}
-              <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground h-full">
-                欢迎使用智能错题提问系统，请您根据什么问题提问
-                {/* 快捷问题按钮 */}
-                <div className="space-y-2">
-                  {quickQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="w-full justify-start text-left h-auto py-3 px-4 whitespace-normal"
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
-                {/* 对话展示区域 */}
-                <div className="space-y-3">
-                  <div className="h-32 rounded-lg bg-muted p-4">
-                    {/* 对话内容占位 */}
+        <div className="lg:col-span-5">
+          <div className="h-full bg-muted rounded-lg ml-4 border-2 border-muted-foreground/25 p-6">
+            <h2 className="text-xl font-semibold m-4 pb-3 border-b">
+              功能介绍
+            </h2>
+            <div className="space-y-3 px-3">
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex justify-center">
+                    <PencilLine className="size-6 text-primary mr-3" />
+                    <div className="text-lg font-medium mb-1">自动解析</div>
                   </div>
-                  <div className="h-32 rounded-lg bg-muted p-4">
-                    {/* 对话内容占位 */}
+                  <div className="text-sm text-muted-foreground text-center">
+                    AI自动识别题目信息
                   </div>
-                </div>
-              </div>
-            </CardContent>
+                </CardContent>
+              </Card>
 
-            <CardFooter>
-              {/* 添加提问按钮 */}
-              <Button className="w-full shadow-md">
-                <Plus className="size-4 mr-2" />
-                请用自然语言提问
-              </Button>
-            </CardFooter>
-          </Card>
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex justify-center">
+                    <Lightbulb className="size-6 text-primary mr-3" />
+                    <div className="text-lg font-medium mb-1">知识点链接</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-center">
+                    智能匹配知识点和讲解
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex justify-center">
+                    <Redo2 className="size-6 text-primary mr-3" />
+                    <div className="text-lg font-medium mb-1">试题再练</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-center">
+                    生成相似题以巩固知识点
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
