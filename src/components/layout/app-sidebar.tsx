@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { BookOpen, House, Upload, List, BrainCog } from 'lucide-react';
 
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { NavMain } from '@/components/layout/nav-main';
+import { NavUser } from '@/components/layout/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -27,17 +27,17 @@ const data = {
     },
     {
       title: '上传错题',
-      url: '/home/upload-question',
+      url: '/upload-question',
       icon: Upload,
     },
     {
       title: '我的错题',
-      url: '/home/my-question',
+      url: '/my-question',
       icon: BookOpen,
     },
     {
       title: '知识点库',
-      url: '/home/knowledge-base',
+      url: '/knowledge-base',
       icon: List,
     },
   ],
