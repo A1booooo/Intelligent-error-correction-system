@@ -30,7 +30,7 @@ export function NavMain({
             tooltip={item.title}
             className={
               pathname.includes(item.url)
-                ? 'bg-primary text-primary-foreground pointer-events-none'
+                ? 'bg-primary transition-all duration-200 text-primary-foreground pointer-events-none'
                 : 'cursor-pointer transition-all duration-200'
             }
             onClick={() => navigate(item.url)}

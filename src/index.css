@@ -209,3 +209,35 @@ textarea:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
+
+@keyframes collapsible-open {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes collapsible-closed {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* [data-state]太宽泛了，影响了所有带这个属性的元素 */
+
+[data-slot='collapsible-content'][data-state='open'] {
+  animation: collapsible-open 0.3s ease-out;
+}
+
+[data-slot='collapsible-content'][data-state='closed'] {
+  animation: collapsible-closed 0.3s ease-in;
+}
