@@ -1,6 +1,12 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CloudUpload, PencilLine, Lightbulb, Redo2 } from 'lucide-react';
+import {
+  CloudUpload,
+  PencilLine,
+  Lightbulb,
+  Redo2,
+  BotMessageSquare,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -160,6 +166,18 @@ export default function UploadQuestionPage() {
                   </div>
                   <div className="text-sm text-muted-foreground text-center">
                     生成相似题以巩固知识点
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex justify-center">
+                    <BotMessageSquare className="size-6 text-primary mr-3" />
+                    <div className="text-lg font-medium mb-1">AI问答</div>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-center">
+                    与AI实时问答解决问题
                   </div>
                 </CardContent>
               </Card>
