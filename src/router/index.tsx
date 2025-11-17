@@ -19,8 +19,8 @@ function Router() {
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
-        </Route> */}
-
+        </Route>
+ */}
         {/* 主应用路由 */}
         <Route path="/" element={<MainLayout />}>
           <Route path="" element={<Navigate to="/home" />} />
