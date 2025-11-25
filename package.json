@@ -12,7 +12,8 @@
     "test": "vitest run --passWithNoTests || echo \"No tests found\" && exit 0",
     "test:ui": "vitest --ui",
     "test:watch": "vitest watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,cjs,mjs,vue}": "eslint --fix",
