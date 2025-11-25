@@ -1,5 +1,5 @@
 import { type LucideIcon } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   SidebarGroup,
@@ -18,6 +18,8 @@ export function NavMain({
   }[];
 }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -28,9 +30,10 @@ export function NavMain({
             tooltip={item.title}
             className={
               pathname.includes(item.url)
-                ? 'bg-primary text-primary-foreground pointer-events-none'
-                : ''
+                ? 'bg-primary transition-all duration-200 text-primary-foreground pointer-events-none'
+                : 'cursor-pointer transition-all duration-200'
             }
+            onClick={() => navigate(item.url)}
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
