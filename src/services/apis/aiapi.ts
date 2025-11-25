@@ -1,29 +1,120 @@
-import { service } from "@/utils/http";
-const isMock = true; 
+import request from '@/utils/request';
 
-export async function getAiExplanation(
-  data: { question: string; answer: string }
-): Promise<{ data: string }> {
-  console.log(data); // 临时防止报错，我拿到后端后会删除
-  if (isMock) {
-    await new Promise((r) => setTimeout(r, 1000));
-
-    const explanation = `题目讲解sample`;
-
-    return { data: explanation };
-  }
-  // 后端上线后改
-  return service.post("/ai/explanation", data);
+const API_VERSION = 'v1';
+const BASE_URL = import.meta.env.VITE_BASE_URL || '';
+export interface StreamResponse {
+  content?: string;
+  text?: string;
+  done?: boolean;
+  [key: string]: any;
 }
 
-export async function getSimilarQuestion(
-  data: { question: string }
-): Promise<{ data: string }> {
-  console.log(data); // 临时防止报错，我拿到后端后会删除
-  if (isMock) {
-    await new Promise((r) => setTimeout(r, 1000));
-    return { data: "回答sample" };
-  }
+export const aiApi = {
+  /**
+   * 1. AI流式解题接口
+   * Method: POST
+   */
+  solveStream: async (
+    question: string,
+    onMessage: (text: string) => void,
+    onError: (err: any) => void,
+    signal?: AbortSignal,
+  ) => {
+    const token = localStorage.getItem('token');
 
-  return service.post("/ai/similar", data);
-}
+    try {
+      const url = new URL(`${BASE_URL}/api/${API_VERSION}/solve/stream`);
+      url.searchParams.append('question', question);
+
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({}),
+        signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, msg: ${errorText}`,
+        );
+      }
+
+      if (!response.body) throw new Error('Response body is empty');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+
+          const dataStr = trimmed.slice(5).trim();
+
+          if (dataStr === '[DONE]') return;
+
+          try {
+            const data: StreamResponse = JSON.parse(dataStr);
+            const content = data.content || data.text || '';
+            if (content) onMessage(content);
+          } catch (_e) {
+            console.warn('Non-JSON SSE data:', dataStr);
+            onMessage(dataStr);
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        onError(error);
+      }
+    }
+  },
+
+  /**
+   * 2. 发送消息并获取AI回复
+   * Method: POST
+   */
+  sendMessage: (data: { conversationId: string; message: string }) => {
+    return request.post<any>({
+      url: `/api/${API_VERSION}/conversation/send-message`,
+      data,
+    });
+  },
+
+  /**
+   * 3. 基于错题ID的AI对话
+   * Method: POST
+   */
+  solveWithContext: (data: {
+    questionId: string | number;
+    userQuestion: string;
+    questionContent?: string;
+  }) => {
+    return request.post<any>({
+      url: `/api/${API_VERSION}/conversation/solve-with-context`,
+      data,
+    });
+  },
+
+  // 4. 删除会话
+  deleteConversation: (conversationId: string) => {
+    return request.delete<void>({
+      url: `/api/${API_VERSION}/conversation/delete/`,
+      params: { conversationId },
+    });
+  },
+};

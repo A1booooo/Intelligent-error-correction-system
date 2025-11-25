@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import MainPage from '@/pages/Main';
 import HomePage from '@/features/Home/Home';
-import AiExplainPage from "@/pages/AiExplainPage/AiExplainPage"; 
-import PracticePage from "@/pages/practice/PracticePage";
+import AiExplainPage from '@/pages/AiExplainPage/AiExplainPage';
+import KnowledgePointPage from '@/pages/KnowledgePointPage/KnowledgePointPage';
+// import PracticePage from "@/pages/practice/PracticePage";
 
 function Router() {
   return (
@@ -24,10 +25,11 @@ function Router() {
             />
             <Route
               path="knowledge-base"
+              element={<KnowledgePointPage />}
               /* element={ TODO: KnowledgeBasePage } */
             />
             <Route path="ai-explain" element={<AiExplainPage />} />
-            <Route path="practice" element={<PracticePage />} />
+            {/* <Route path="practice" element={<PracticePage />} /> */}
           </Route>
         </Route>
       </Routes>

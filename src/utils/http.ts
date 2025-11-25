@@ -1,18 +1,50 @@
-import axios from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import {
+  addRequest,
+  removeRequest,
+  cancelRequest,
+  cancelAllRequest,
+} from './requestQueue';
+import { IResponse } from './type';
 
-export const service = axios.create({
-  baseURL: "http://localhost:114514", 
-  timeout: 8000, 
+const axiosInstance: AxiosInstance = axios.create({
+  baseURL: 'http://127.0.0.1:8091',
+  timeout: 8000,
 });
 
-service.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
-    //token + header 
+    removeRequest(config);
+    addRequest(config);
+
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers['Authorization'] = token;
+    }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  },
 );
-service.interceptors.response.use(
-  (response) => response.data,
-  (error) => Promise.reject(error)
+
+axiosInstance.interceptors.response.use(
+  (response: AxiosResponse) => {
+    removeRequest(response.config);
+    return response.data;
+  },
+  (error) => {
+    if (error.config) {
+      removeRequest(error.config);
+    }
+    return Promise.reject(error);
+  },
 );
+
+export const service = {
+  request: <T = unknown>(config: AxiosRequestConfig): Promise<IResponse<T>> => {
+    return axiosInstance.request(config);
+  },
+  cancelRequest,
+  cancelAllRequest,
+};
