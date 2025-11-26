@@ -1,31 +1,47 @@
+import { useMemo } from 'react';
+
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { PieChart, Pie, Cell } from 'recharts';
+import { ChartPieSimpleProps } from '../../services/type';
 
-const pieData = [
-  { name: '代数', value: 35, color: 'var(--chart-1)' },
-  { name: '几何', value: 25, color: 'var(--chart-2)' },
-  { name: '其他', value: 40, color: 'var(--chart-3)' },
+const COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ];
 
-const chartConfig = {
-  代数: { label: '代数', color: 'var(--chart-1)' },
-  几何: { label: '几何', color: 'var(--chart-2)' },
-  其他: { label: '其他', color: 'var(--chart-3)' },
-};
+const chartConfig = {};
 
-export function ChartPieSimple() {
+export function ChartPieSimple({ data }: ChartPieSimpleProps) {
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    return data.map((item, index) => {
+      const name = Object.keys(item)[0];
+      const value = item[name];
+
+      return {
+        name: name,
+        value: value,
+        color: COLORS[index % COLORS.length],
+      };
+    });
+  }, [data]);
+
   return (
     <ChartContainer config={chartConfig} className="h-[200px]">
       <PieChart>
         <Pie
-          data={pieData}
+          data={chartData}
           cx="50%"
           cy="50%"
           innerRadius={40}
           outerRadius={60}
           dataKey="value"
         >
-          {pieData.map((entry, index) => (
+          {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>

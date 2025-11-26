@@ -10,6 +10,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ResetPassword } from '@/services/user';
+import { SendCode } from '@/services/user';
+import { toast } from 'sonner';
+
+interface ApiResponse {
+  code: number;
+  message?: string;
+  data?: unknown;
+}
 
 export function ForgotPasswordForm({
   className,
@@ -17,8 +26,8 @@ export function ForgotPasswordForm({
 }: React.ComponentProps<'form'>) {
   const [step, setStep] = useState<'email' | 'reset' | 'success'>('email');
   const [formData, setFormData] = useState({
-    email: '',
-    verificationCode: '',
+    userAccount: '',
+    checkCode: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -27,38 +36,42 @@ export function ForgotPasswordForm({
   const [isSendingCode, setIsSendingCode] = useState(false);
 
   const handleSendCode = async () => {
-    if (!formData.email) {
-      setErrors({ ...errors, email: '请输入邮箱地址' });
+    if (!formData.userAccount) {
+      setErrors({ ...errors, userAccount: '请输入邮箱地址' });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setErrors({ ...errors, email: '请输入有效的邮箱地址' });
+    if (!emailRegex.test(formData.userAccount)) {
+      setErrors({ ...errors, userAccount: '请输入有效的邮箱地址' });
       return;
     }
 
     setIsSendingCode(true);
+    SendCode(formData.userAccount).then((res: ApiResponse) => {
+      if (res.code === 200) {
+        toast.success('验证码发送成功');
+        setIsSendingCode(false);
+        setCountdown(60);
 
-    setTimeout(() => {
-      setIsSendingCode(false);
-      setCountdown(60);
-
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 1000);
+        const timer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        toast.error(res.message);
+        setIsSendingCode(false);
+      }
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value });
-    // 清除对应字段的错误
     if (errors[id]) {
       setErrors({ ...errors, [id]: '' });
     }
@@ -67,18 +80,18 @@ export function ForgotPasswordForm({
   const validateEmailStep = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.email) {
-      newErrors.email = '请输入邮箱地址';
+    if (!formData.userAccount) {
+      newErrors.userAccount = '请输入邮箱地址';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = '请输入有效的邮箱地址';
+      if (!emailRegex.test(formData.userAccount)) {
+        newErrors.userAccount = '请输入有效的邮箱地址';
       }
     }
-    if (!formData.verificationCode) {
-      newErrors.verificationCode = '请输入验证码';
-    } else if (formData.verificationCode.length !== 6) {
-      newErrors.verificationCode = '验证码应为6位数字';
+    if (!formData.checkCode) {
+      newErrors.checkCode = '请输入验证码';
+    } else if (formData.checkCode.length !== 6) {
+      newErrors.checkCode = '验证码应为6位数字';
     }
 
     setErrors(newErrors);
@@ -113,8 +126,14 @@ export function ForgotPasswordForm({
   const handleResetSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateResetStep()) {
-      console.log('密码重置成功:', formData);
-      setStep('success');
+      ResetPassword(formData).then((res: ApiResponse) => {
+        if (res.code === 200) {
+          toast.success('密码重置成功');
+          setStep('success');
+        } else {
+          toast.error(res.message);
+        }
+      });
     }
   };
 
@@ -133,32 +152,32 @@ export function ForgotPasswordForm({
             </p>
           </div>
           <Field>
-            <FieldLabel htmlFor="email">邮箱</FieldLabel>
+            <FieldLabel htmlFor="userAccount">邮箱</FieldLabel>
             <Input
-              id="email"
+              id="userAccount"
               type="email"
-              placeholder="example@email.com"
-              value={formData.email}
+              placeholder="请输入邮箱地址"
+              value={formData.userAccount}
               onChange={handleChange}
-              className={errors.email ? 'border-red-500' : ''}
+              className={errors.userAccount ? 'border-red-500' : ''}
             />
-            {errors.email && (
+            {errors.userAccount && (
               <FieldDescription className="text-red-500 text-xs">
-                {errors.email}
+                {errors.userAccount}
               </FieldDescription>
             )}
           </Field>
           <Field>
-            <FieldLabel htmlFor="verificationCode">验证码</FieldLabel>
+            <FieldLabel htmlFor="checkCode">验证码</FieldLabel>
             <div className="flex gap-2">
               <Input
-                id="verificationCode"
+                id="checkCode"
                 type="text"
                 placeholder="请输入6位验证码"
                 maxLength={6}
-                value={formData.verificationCode}
+                value={formData.checkCode}
                 onChange={handleChange}
-                className={errors.verificationCode ? 'border-red-500' : ''}
+                className={errors.checkCode ? 'border-red-500' : ''}
               />
               <Button
                 type="button"
@@ -174,14 +193,14 @@ export function ForgotPasswordForm({
                     : '发送验证码'}
               </Button>
             </div>
-            {errors.verificationCode && (
+            {errors.checkCode && (
               <FieldDescription className="text-red-500 text-xs">
-                {errors.verificationCode}
+                {errors.checkCode}
               </FieldDescription>
             )}
           </Field>
           <Field>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full cursor-pointer">
               下一步
             </Button>
           </Field>
@@ -189,7 +208,7 @@ export function ForgotPasswordForm({
             <FieldDescription className="text-center">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground"
+                className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground cursor-pointer"
               >
                 <ArrowLeft className="size-3" />
                 返回登录
@@ -248,7 +267,7 @@ export function ForgotPasswordForm({
             )}
           </Field>
           <Field>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full cursor-pointer">
               重置密码
             </Button>
           </Field>
@@ -257,7 +276,7 @@ export function ForgotPasswordForm({
               <button
                 type="button"
                 onClick={() => setStep('email')}
-                className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground"
+                className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground cursor-pointer"
               >
                 <ArrowLeft className="size-3" />
                 返回上一步
@@ -285,7 +304,7 @@ export function ForgotPasswordForm({
         </div>
         <Field>
           <Link to="/login" className="w-full">
-            <Button type="button" className="w-full">
+            <Button type="button" className="w-full cursor-pointer">
               返回登录
             </Button>
           </Link>

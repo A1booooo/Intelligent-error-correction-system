@@ -9,35 +9,44 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
+import { Signup, SendCode } from '../../services/user';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+interface ApiResponse {
+  code: number;
+  message?: string;
+  data?: unknown;
+}
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<'form'>) {
   const [formData, setFormData] = useState({
-    firstname: '',
-    lastname: '',
-    email: '',
-    verificationCode: '',
-    password: '',
+    userAccount: '',
+    checkCode: '',
+    userPassword: '',
     confirmPassword: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [countdown, setCountdown] = useState(0);
   const [isSendingCode, setIsSendingCode] = useState(false);
+  const navigate = useNavigate();
 
   const handleSendCode = async () => {
-    if (!formData.email) {
+    if (!formData.userAccount) {
       setErrors({ ...errors, email: '请输入邮箱地址' });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!emailRegex.test(formData.userAccount)) {
       setErrors({ ...errors, email: '请输入有效的邮箱地址' });
       return;
     }
 
     setIsSendingCode(true);
+    SendCode(formData.userAccount);
     setTimeout(() => {
       setIsSendingCode(false);
       setCountdown(60);
@@ -64,33 +73,27 @@ export function SignupForm({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstname.trim()) {
-      newErrors.firstname = '请输入名字';
-    }
-    if (!formData.lastname.trim()) {
-      newErrors.lastname = '请输入姓氏';
-    }
-    if (!formData.email) {
+    if (!formData.userAccount) {
       newErrors.email = '请输入邮箱地址';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
+      if (!emailRegex.test(formData.userAccount)) {
         newErrors.email = '请输入有效的邮箱地址';
       }
     }
-    if (!formData.verificationCode) {
-      newErrors.verificationCode = '请输入验证码';
-    } else if (formData.verificationCode.length !== 6) {
-      newErrors.verificationCode = '验证码应为6位数字';
+    if (!formData.checkCode) {
+      newErrors.checkCode = '请输入验证码';
+    } else if (formData.checkCode.length !== 6) {
+      newErrors.checkCode = '验证码应为6位数字';
     }
-    if (!formData.password) {
+    if (!formData.userPassword) {
       newErrors.password = '请输入密码';
-    } else if (formData.password.length < 8) {
+    } else if (formData.userPassword.length < 8) {
       newErrors.password = '密码长度至少为8个字符';
     }
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = '请确认密码';
-    } else if (formData.password !== formData.confirmPassword) {
+    } else if (formData.userPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = '两次输入的密码不一致';
     }
 
@@ -101,7 +104,14 @@ export function SignupForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log('注册信息:', formData);
+      Signup(formData).then((res: ApiResponse) => {
+        if (res.code === 200) {
+          toast.success('注册成功');
+          navigate('/login');
+        } else {
+          toast.error(res.message);
+        }
+      });
     }
   };
 
@@ -119,12 +129,12 @@ export function SignupForm({
           </p>
         </div>
         <Field>
-          <FieldLabel htmlFor="email">邮箱</FieldLabel>
+          <FieldLabel htmlFor="userAccount">邮箱</FieldLabel>
           <Input
-            id="email"
-            type="email"
-            placeholder="example@email.com"
-            value={formData.email}
+            id="userAccount"
+            type="text"
+            placeholder="请输入邮箱地址"
+            value={formData.userAccount}
             onChange={handleChange}
             className={errors.email ? 'border-red-500' : ''}
           />
@@ -135,23 +145,23 @@ export function SignupForm({
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="verificationCode">验证码</FieldLabel>
+          <FieldLabel htmlFor="checkCode">验证码</FieldLabel>
           <div className="flex gap-2">
             <Input
-              id="verificationCode"
+              id="checkCode"
               type="text"
               placeholder="请输入6位验证码"
               maxLength={6}
-              value={formData.verificationCode}
+              value={formData.checkCode}
               onChange={handleChange}
-              className={errors.verificationCode ? 'border-red-500' : ''}
+              className={errors.checkCode ? 'border-red-500' : ''}
             />
             <Button
               type="button"
               variant="outline"
               onClick={handleSendCode}
               disabled={countdown > 0 || isSendingCode}
-              className="whitespace-nowrap min-w-[100px]"
+              className="whitespace-nowrap min-w-[100px] cursor-pointer"
             >
               {isSendingCode
                 ? '发送中...'
@@ -160,18 +170,19 @@ export function SignupForm({
                   : '发送验证码'}
             </Button>
           </div>
-          {errors.verificationCode && (
+          {errors.checkCode && (
             <FieldDescription className="text-red-500 text-xs">
-              {errors.verificationCode}
+              {errors.checkCode}
             </FieldDescription>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="password">密码</FieldLabel>
+          <FieldLabel htmlFor="userPassword">密码</FieldLabel>
           <Input
-            id="password"
+            id="userPassword"
             type="password"
-            value={formData.password}
+            placeholder="请输入密码"
+            value={formData.userPassword}
             onChange={handleChange}
             className={errors.password ? 'border-red-500' : ''}
           />
@@ -199,7 +210,7 @@ export function SignupForm({
           )}
         </Field>
         <Field>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full cursor-pointer">
             创建账户
           </Button>
         </Field>
