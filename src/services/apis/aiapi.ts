@@ -10,79 +10,84 @@ export interface StreamResponse {
 }
 
 export const aiApi = {
-  /**
+/**
    * 1. AI流式解题接口
-   * Method: POST
    */
-  solveStream: async (
-    question: string,
-    onMessage: (text: string) => void,
-    onError: (err: any) => void,
-    signal?: AbortSignal,
-  ) => {
-    const token = localStorage.getItem('token');
+solveStream: async (
+  question: string,
+  onMessage: (text: string) => void,
+  onError: (err: any) => void,
+  signal?: AbortSignal,
+) => {
+  const token = localStorage.getItem('token'); 
 
-    try {
-      const url = new URL(`${BASE_URL}/api/${API_VERSION}/solve/stream`);
-      url.searchParams.append('question', question);
+  try {
+    // 构造完整 URL
+    const url = new URL(`${BASE_URL}/api/${API_VERSION}/solve/stream`);
+    url.searchParams.append('question', question);
 
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify({}),
-        signal,
-      });
+    console.log("正在请求 AI 流式接口:", url.toString());
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, msg: ${errorText}`,
-        );
-      }
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // 如果后端需要 Bearer Token
+         Authorization: token ? `Bearer ${token}` : '',
+         // 如果后端是用 access-token header
+         // 'access-token': token || ''
+      },
+      body: JSON.stringify({}),
+      signal,
+    });
 
-      if (!response.body) throw new Error('Response body is empty');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, msg: ${errorText}`,
+      );
+    }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+    if (!response.body) throw new Error('Response body is empty');
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
 
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
 
-        const lines = buffer.split(/\r?\n/);
-        buffer = lines.pop() || '';
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith('data:')) continue;
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || '';
 
-          const dataStr = trimmed.slice(5).trim();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
 
-          if (dataStr === '[DONE]') return;
+        const dataStr = trimmed.slice(5).trim();
 
-          try {
-            const data: StreamResponse = JSON.parse(dataStr);
-            const content = data.content || data.text || '';
-            if (content) onMessage(content);
-          } catch (_e) {
-            console.warn('Non-JSON SSE data:', dataStr);
-            onMessage(dataStr);
-          }
+        if (dataStr === '[DONE]') return;
+
+        try {
+          const data: StreamResponse = JSON.parse(dataStr);
+          const content = data.content || data.text || '';
+          if (content) onMessage(content);
+        } catch (_e) {
+          console.warn('Non-JSON SSE data:', dataStr);
+          onMessage(dataStr);
         }
       }
-    } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        onError(error);
-      }
     }
-  },
+  } catch (error: any) {
+    if (error.name !== 'AbortError') {
+      onError(error);
+    }
+  }
+},
 
   /**
    * 2. 发送消息并获取AI回复
