@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StopCircle, Loader2 } from 'lucide-react';
 import { useStreamingAI } from '@/hooks/useStreamingAI';
-import ChatBox from '@/components/common/ChatBox';
+import { AiChatPanel } from "@/components/business/AiChatPanel";
 
 export default function UploadQuestionPage() {
   const [originalQuestion, setOriginalQuestion] = useState('');
@@ -213,18 +213,10 @@ export default function UploadQuestionPage() {
           </Card>
         </div>
 
-        {/* 右侧区域 - AI问答区 */}
-        <div className="lg:col-span-4 space-y-6 min-h-0">
-          <Card className="shadow-lg h-full flex flex-col min-h-0">
-            <CardHeader>
-              <CardTitle className="text-lg">AI问答区</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-1 min-h-0">
-              <ChatBox />
-            </CardContent>
-          </Card>
-        </div>
+        <div className="lg:col-span-4 h-full overflow-hidden">
+          <AiChatPanel mode="embedded" className="h-full shadow-lg border-slate-200" />
       </div>
+    </div>
     </div>
   );
 }

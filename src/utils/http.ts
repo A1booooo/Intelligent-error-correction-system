@@ -8,7 +8,7 @@ import {
 import { IResponse } from './type';
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8091',
+  baseURL: import.meta.env.VITE_BASE_AXIOS_URL || '',
   timeout: 8000,
 });
 

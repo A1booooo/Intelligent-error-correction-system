@@ -31,11 +31,7 @@ function Router() {
               <Route path="question-detail" element={<QuestionDetailPage />} />
             </Route>
             <Route path="my-question" element={<MyQuestionPage />} />
-            <Route
-              path="knowledge-base"
-              element={<KnowledgePointPage />}
-              /* element={ TODO: KnowledgeBasePage } */
-            />
+            <Route path="knowledge-base" element={<KnowledgePointPage />}/>
             <Route path="ai-explain" element={<AiExplainPage />} />
             {/* <Route path="practice" element={<PracticePage />} /> */}
           </Route>
