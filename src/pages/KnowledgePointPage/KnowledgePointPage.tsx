@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { AiChatPanel } from '@/components/business/AiChatPanel';
 import { useKnowledgeGraph } from '@/hooks/useKnowledgeGraph';
 import { useKnowledgePage } from '@/hooks/useKnowledgePage';
-import { questionApi, GenerationData } from '@/services/apis/questionapi';
+import { generateQuestion, judgeQuestion, recordQuestion,GenerationData } from '@/services/apis/questionapi';
 
 const scrollbarStyle = `
   .custom-scroll::-webkit-scrollbar {
@@ -59,7 +59,7 @@ const InternalLearningView = ({ title, description, mistakeIds, onBack }: Intern
     setErrorMessage(null);
     try {
       const randomId = mistakeIds[Math.floor(Math.random() * mistakeIds.length)];
-      const res = await questionApi.generate(randomId);
+      const res = await generateQuestion(randomId);
       if (res.code === 200) {
         setQuestionData(res.data);
         setPracticeStep('answering');
@@ -81,7 +81,7 @@ const InternalLearningView = ({ title, description, mistakeIds, onBack }: Intern
     setPracticeStep('loading');
     setErrorMessage(null);
     try {
-      const res = await questionApi.judge(questionData.questionId, userAnswer);
+      const res = await judgeQuestion(questionData.questionId, userAnswer);
       if (res.code === 200) {
         setPracticeStep('result');
         const isExampleCorrect = Math.random() > 0.5; 
@@ -101,7 +101,7 @@ const InternalLearningView = ({ title, description, mistakeIds, onBack }: Intern
     setIsRecording(true);
     setErrorMessage(null);
     try {
-      const res = await questionApi.record(questionData.questionId);
+      const res = await recordQuestion(questionData.questionId);
       if (res.code !== 200) setErrorMessage(`录入失败: ${res.info}`);
     } catch (error) {
       setErrorMessage("网络请求超时");

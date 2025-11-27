@@ -15,7 +15,6 @@ export interface JudgeData {
 /**
  * 1. AI 巩固出题
  * Method: POST
- * 注意：原代码中使用 searchParams (Query String) 传参，所以在 axios 中使用 params 属性
  */
 export const generateQuestion = (mistakeQuestionId: number) => {
   return request.post<GenerationData>({

@@ -4,6 +4,7 @@ export interface IResponse<T = any> {
   code: number;
   data: T;
   message: string;
+  info: string; 
   success: boolean;
   traceId?: string;
 }
