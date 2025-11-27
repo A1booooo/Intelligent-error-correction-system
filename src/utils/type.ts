@@ -1,3 +1,17 @@
+import type { AxiosRequestConfig } from 'axios';
+
+export interface UserResponse {
+  traceId: string;
+  code: number;
+  info: string;
+  data: {
+    userId: string;
+    userName: string;
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
 export interface OverviewResponse {
   questionsNum: number;
   reviewRate: string;
@@ -38,3 +52,6 @@ export interface PieDataItem {
 export interface ChartPieSimpleProps {
   data?: PieDataItem[];
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CustomAxiosRequestConfig extends AxiosRequestConfig {}

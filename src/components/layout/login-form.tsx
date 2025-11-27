@@ -12,16 +12,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Login } from '@/services/user';
-
-interface ApiResponse {
-  code: number;
-  message?: string;
-  data?: {
-    accessToken?: string;
-    refreshToken?: string;
-    [key: string]: unknown;
-  };
-}
+import { userAtom } from '@/atoms/user';
+import { useAtom } from 'jotai';
 
 export function LoginForm({
   className,
@@ -33,6 +25,7 @@ export function LoginForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const [, setUser] = useAtom(userAtom);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -45,14 +38,15 @@ export function LoginForm({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validateForm()) {
-      Login(formData).then((res: ApiResponse) => {
+      Login(formData).then((res) => {
         if (res.code === 200) {
           toast.success('登录成功');
-          localStorage.setItem('accessToken', res.data.accessToken);
-          localStorage.setItem('refreshToken', res.data.refreshToken);
+          setUser({ userId: res.data.userId });
+          localStorage.setItem('access-token', res.data.accessToken);
+          localStorage.setItem('refresh-token', res.data.refreshToken);
           navigate('/');
         } else {
-          toast.error(res.message);
+          toast.error(res.info);
         }
       });
     }

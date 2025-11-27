@@ -22,7 +22,7 @@ import {
   GetKeyPoint,
 } from '@/services/home';
 import { getStatistics } from '@/services/myQuestion';
-import { OverviewResponse, AnalysisData, ChartData } from '@/services/type';
+import { OverviewResponse, AnalysisData, ChartData } from '@/utils/type';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -87,7 +87,9 @@ export default function Home() {
                 <Brain className="size-5" />
                 <span className="text-sm">总错题数</span>
               </div>
-              <div className="text-4xl font-bold">{overview.questionsNum}</div>
+              <div className="text-4xl font-bold">
+                {overview?.questionsNum ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -97,7 +99,9 @@ export default function Home() {
                 <RefreshCw className="size-5" />
                 <span className="text-sm">复习巩固率</span>
               </div>
-              <div className="text-4xl font-bold">{overview.reviewRate}</div>
+              <div className="text-4xl font-bold">
+                {overview?.reviewRate ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -107,7 +111,9 @@ export default function Home() {
                 <Target className="size-5" />
                 <span className="text-sm">易错知识点</span>
               </div>
-              <div className="text-4xl font-bold">{overview.hardQuestions}</div>
+              <div className="text-4xl font-bold">
+                {overview?.hardQuestions ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -117,7 +123,9 @@ export default function Home() {
                 <Clock className="size-5" />
                 <span className="text-sm">本周学习时长</span>
               </div>
-              <div className="text-4xl font-bold">{overview.learningTime}</div>
+              <div className="text-4xl font-bold">
+                {overview?.learningTime ?? 0}
+              </div>
             </CardContent>
           </Card>
         </div>

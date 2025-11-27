@@ -14,12 +14,6 @@ import { ResetPassword } from '@/services/user';
 import { SendCode } from '@/services/user';
 import { toast } from 'sonner';
 
-interface ApiResponse {
-  code: number;
-  message?: string;
-  data?: unknown;
-}
-
 export function ForgotPasswordForm({
   className,
   ...props
@@ -47,7 +41,7 @@ export function ForgotPasswordForm({
     }
 
     setIsSendingCode(true);
-    SendCode(formData.userAccount).then((res: ApiResponse) => {
+    SendCode(formData.userAccount).then((res) => {
       if (res.code === 200) {
         toast.success('验证码发送成功');
         setIsSendingCode(false);
@@ -63,7 +57,7 @@ export function ForgotPasswordForm({
           });
         }, 1000);
       } else {
-        toast.error(res.message);
+        toast.error(res.info);
         setIsSendingCode(false);
       }
     });
@@ -126,12 +120,12 @@ export function ForgotPasswordForm({
   const handleResetSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateResetStep()) {
-      ResetPassword(formData).then((res: ApiResponse) => {
+      ResetPassword(formData).then((res) => {
         if (res.code === 200) {
           toast.success('密码重置成功');
           setStep('success');
         } else {
-          toast.error(res.message);
+          toast.error(res.info);
         }
       });
     }

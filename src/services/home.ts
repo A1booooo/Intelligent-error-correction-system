@@ -1,22 +1,37 @@
-import request from '../utils/http';
-import { OverviewResponse } from './type';
+import request from '../utils/request';
+import { OverviewResponse } from '../utils/type';
 
-export function GetOverview(): Promise<OverviewResponse> {
-  return request.get('/api/v1/overview/get_overview');
+export async function GetOverview(): Promise<OverviewResponse> {
+  const res = await request.get<OverviewResponse>({
+    url: '/api/v1/overview/get_overview',
+  });
+  return res;
 }
 
-export function GetOverDue(): Promise<object> {
-  return request.get('/api/v1/feedback/review/overdue-count');
+export async function GetOverDue(): Promise<object> {
+  const res = await request.get<object>({
+    url: '/api/v1/feedback/review/overdue-count',
+  });
+  return res;
 }
 
-export function GetTrickyKnowledge(): Promise<object> {
-  return request.get('/api/v1/feedback/review/tricky_knowledge');
+export async function GetTrickyKnowledge(): Promise<object> {
+  const res = await request.get<object>({
+    url: '/api/v1/feedback/review/tricky_knowledge',
+  });
+  return res;
 }
 
-export function GetKeyPoint(): Promise<object> {
-  return request.get('/api/v1/ai_suggession/get_key_point');
+export async function GetKeyPoint(): Promise<object> {
+  const res = await request.get<object>({
+    url: '/api/v1/ai_suggession/get_key_point',
+  });
+  return res;
 }
 
-export function GetStudyDynamic(): Promise<object> {
-  return request.get('/api/v1/overview/get_study_dynamic');
+export async function GetStudyDynamic(): Promise<object> {
+  const res = await request.get<object>({
+    url: '/api/v1/overview/get_study_dynamic',
+  });
+  return res;
 }

@@ -1,21 +1,26 @@
-import request from '../utils/http';
+import request from '../utils/request';
+import { UserResponse } from '../utils/type';
 
 export function Login(data: object) {
-  return request.post('/api/userAccount/login', data);
+  return request.post<UserResponse>({ url: '/api/userAccount/login', data });
 }
 
 export function Signup(data: { userAccount: string; userPassword: string }) {
-  return request.post('/api/userAccount/register', data);
+  return request.post<UserResponse>({
+    url: '/api/userAccount/register',
+    data,
+  });
 }
 
 export function SendCode(userAccount: string) {
-  return request.post('/api/userAccount/sendEmailCode', {
+  return request.post<UserResponse>({
+    url: '/api/userAccount/sendEmailCode',
     params: { userAccount },
   });
 }
 
 export function Logout() {
-  return request.post('/api/userAccount/logout');
+  return request.post<UserResponse>({ url: '/api/userAccount/logout' });
 }
 
 export function ResetPassword(data: {
@@ -23,5 +28,8 @@ export function ResetPassword(data: {
   newPassword: string;
   checkCode: string;
 }) {
-  return request.post('/api/userAccount/resetPassword', data);
+  return request.post<UserResponse>({
+    url: '/api/userAccount/resetPassword',
+    data,
+  });
 }

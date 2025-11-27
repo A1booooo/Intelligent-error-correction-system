@@ -33,7 +33,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { AnalysisData } from '@/services/type';
+import { AnalysisData } from '@/utils/type';
 
 interface QuestionBackendItem {
   id: number;

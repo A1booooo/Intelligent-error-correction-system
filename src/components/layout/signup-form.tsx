@@ -13,12 +13,6 @@ import { Signup, SendCode } from '../../services/user';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-interface ApiResponse {
-  code: number;
-  message?: string;
-  data?: unknown;
-}
-
 export function SignupForm({
   className,
   ...props
@@ -104,12 +98,12 @@ export function SignupForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      Signup(formData).then((res: ApiResponse) => {
+      Signup(formData).then((res) => {
         if (res.code === 200) {
           toast.success('注册成功');
           navigate('/login');
         } else {
-          toast.error(res.message);
+          toast.error(res.info);
         }
       });
     }

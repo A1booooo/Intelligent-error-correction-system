@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { PieChart, Pie, Cell } from 'recharts';
-import { ChartPieSimpleProps } from '../../services/type';
+import { ChartPieSimpleProps } from '../../utils/type';
 
 const COLORS = [
   'var(--chart-1)',
