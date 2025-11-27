@@ -5,6 +5,13 @@ export interface IResponse<T = any> {
   data: T;
   message: string;
   success: boolean;
+  traceId?: string;
 }
+
+export interface RefreshTokenResult {
+  newAccessToken: string;
+  newRefreshToken: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CustomAxiosRequestConfig extends AxiosRequestConfig {}

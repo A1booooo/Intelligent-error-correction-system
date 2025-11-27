@@ -7,6 +7,10 @@ export interface Message {
   content: string;
   isStreaming?: boolean;
 }
+// 1. 生成唯一ID的工具函数 
+const generateId = () => {
+  return Date.now().toString() + Math.random().toString(36).slice(2, 9);
+};
 
 export const useAiExplain = () => {
   const [input, setInput] = useState('');
@@ -16,11 +20,12 @@ export const useAiExplain = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 消息列表更新时自动滚动
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   /**
    * 停止生成
@@ -29,16 +34,21 @@ export const useAiExplain = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setIsLoading(false);
-      setMessages((prev) => {
-        const newArr = [...prev];
-        if (newArr.length > 0) {
-          newArr[newArr.length - 1].isStreaming = false;
-        }
-        return newArr;
-      });
     }
+    setIsLoading(false);
+    
+    setMessages((prev) => {
+      const newArr = [...prev];
+      if (newArr.length > 0) {
+        const lastMsg = newArr[newArr.length - 1];
+        if (lastMsg.role === 'ai' && lastMsg.isStreaming) {
+           newArr[newArr.length - 1] = { ...lastMsg, isStreaming: false };
+        }
+      }
+      return newArr;
+    });
   };
+
   /**
    * 提交问题
    */
@@ -49,33 +59,39 @@ export const useAiExplain = () => {
     setInput('');
     setIsLoading(true);
 
+    // 2. 使用 generateId 生成绝对唯一 ID
+    const userMsgId = generateId();
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), role: 'user', content: userText },
+      { id: userMsgId, role: 'user', content: userText },
     ]);
-    const aiMsgId = (Date.now() + 1).toString();
+
+    const aiMsgId = generateId();
     setMessages((prev) => [
       ...prev,
       { id: aiMsgId, role: 'ai', content: '', isStreaming: true },
     ]);
+
     abortControllerRef.current = new AbortController();
+
     await aiApi.solveStream(
       userText,
       (chunk) => {
-        setMessages((prev) =>
+        setMessages((prev) => 
           prev.map((msg) => {
             if (msg.id === aiMsgId) {
               return { ...msg, content: msg.content + chunk };
             }
             return msg;
-          }),
+          })
         );
       },
+      // onError
       (err) => {
         console.error('Stream Error:', err);
         setMessages((prev) =>
           prev.map((msg) => {
-            if (msg.id === aiMsgId) {
+            if (msg.id === aiMsgId && msg.role === 'ai') {
               return {
                 ...msg,
                 content: msg.content + '\n\n[网络请求中断或出错，请重试]',
@@ -83,27 +99,29 @@ export const useAiExplain = () => {
               };
             }
             return msg;
-          }),
+          })
         );
         setIsLoading(false);
       },
-      abortControllerRef.current.signal,
+      abortControllerRef.current.signal
     );
 
     setIsLoading(false);
+    abortControllerRef.current = null;
+    
+    // 请求结束，关闭光标
     setMessages((prev) =>
       prev.map((msg) =>
-        msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
-      ),
+        msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
+      )
     );
-    abortControllerRef.current = null;
   };
 
-  const handleClear = async () => {
+  const handleClear = () => {
     if (messages.length === 0) return;
-
     setMessages([]);
     setInput('');
+    handleStop(); 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

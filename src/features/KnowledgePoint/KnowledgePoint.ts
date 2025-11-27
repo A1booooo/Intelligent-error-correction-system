@@ -97,7 +97,6 @@ export const useKnowledgePage = () => {
   const handleSaveNote = async () => {
     if (!activeId) return;
     await knowledgeApi.saveNote(activeId, noteInput);
-    // 这里可以加 Toast 提示
   };
 
   const handleRename = async () => {
@@ -150,7 +149,7 @@ export const useKnowledgePage = () => {
     relatedData,
     relatedPoints,
     isMastered,
-    stats, // 新增
+    stats, 
     refreshTreeTrigger,
     
     // Form & UI State

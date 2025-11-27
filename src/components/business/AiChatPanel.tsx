@@ -4,50 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-
 import { useAiExplain } from "@/features/AiExplain/AiExplain";
 
+// StreamingText 组件
 const StreamingText = ({ content, isStreaming }: { content: string; isStreaming: boolean }) => {
-  const [displayedContent, setDisplayedContent] = useState(content);
-
-  const targetContentRef = useRef(content);
-  
-  const shouldAnimate = isStreaming;
-
-  useEffect(() => {
-    targetContentRef.current = content;
-    
-    if (!shouldAnimate) {
-      setDisplayedContent(content);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setDisplayedContent((current) => {
-        if (current.length >= targetContentRef.current.length) {
-          return current;
-        }
-        const pendingChars = targetContentRef.current.length - current.length;
-        const step = Math.max(1, Math.ceil(pendingChars / 5)); 
-        
-        return targetContentRef.current.slice(0, current.length + step);
-      });
-    }, 30); // 每30ms刷新一次，产生打字感
-
-    return () => clearInterval(interval);
-  }, [content, shouldAnimate]);
-
   return (
-    <span className="whitespace-pre-wrap leading-relaxed break-words">
-      {shouldAnimate ? displayedContent : content}
+    <div className="whitespace-pre-wrap leading-relaxed break-words text-sm">
+      {content}
+      
       {isStreaming && (
-        <span className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom bg-current animate-pulse" />
+        <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-current animate-pulse rounded-sm" />
       )}
-    </span>
+    </div>
   );
 };
-
-// --- 主组件 ---
+// 
+//  主组件 
 interface AiChatPanelProps {
   className?: string;
   mode?: 'standard' | 'embedded'; 
@@ -80,24 +52,22 @@ export function AiChatPanel({ className, mode = 'standard' }: AiChatPanelProps) 
       className
     )}>
       
-      {/* 头部 */}
+      {/* 头部标题 */}
       <CardHeader className="pb-2 pt-4 px-4 shrink-1 bg-white">
         <CardTitle className="text-lg">
           {isEmbedded ? "AI问答区" : "智能解析与问答"}
         </CardTitle>
       </CardHeader>
       
-
-      {/* 内容区 */}
+      {/* 内容主体 */}
       <CardContent className="flex-1 p-4 overflow-hidden relative flex flex-col">
         
-        {/* 灰色背景容器 */}
+        {/* 消息列表容器 (灰色背景) */}
         <div className={cn("flex-1 rounded-xl overflow-hidden relative flex flex-col", isEmbedded ? "bg-[#f9fafb]" : "bg-slate-50")}>
           
-          {/* 滚动消息列表 */}
           <div className="flex-1 h-full overflow-y-auto p-3 space-y-4 scroll-smooth">
               
-              {/* 1. 默认欢迎语 */}
+              {/* 1. 默认欢迎语 (仅嵌入模式且无消息时显示) */}
               {isEmbedded && messages.length === 0 && (
                 <div className="flex justify-start animate-in fade-in slide-in-from-left-2 duration-300">
                   <div className="bg-[#14b8a6] text-white px-4 py-3 rounded-2xl rounded-tl-none text-sm shadow-sm leading-relaxed max-w-[90%]">
@@ -106,32 +76,30 @@ export function AiChatPanel({ className, mode = 'standard' }: AiChatPanelProps) 
                 </div>
               )}
 
-              {/* 2. 消息列表 */}
+              {/* 2. 消息遍历 */}
               {messages.map((msg) => (
                 <div key={msg.id} className={cn("flex w-full", msg.role === "user" ? "justify-end" : "justify-start")}>
                   <div className={cn(
-                      "px-4 py-2.5 rounded-2xl text-sm shadow-sm max-w-[90%]",
+                      "px-4 py-2.5 rounded-2xl shadow-sm max-w-[90%]",
                       msg.role === "user" 
                         ? "bg-[#545cff] text-white rounded-tr-none" // 用户: 紫色
                         : "bg-white text-slate-800 border border-slate-200 rounded-tl-none" // AI: 白色
                     )}>
                     
-                    {/* 使用平滑打字机组件 */}
+                    {/* StreamingText 组件 */}
                     <StreamingText content={msg.content} isStreaming={!!msg.isStreaming} />
                     
                   </div>
                 </div>
               ))}
               
-              {/* 底部锚点 */}
               <div ref={scrollRef} />
           </div>
         </div>
 
-        {/* 底部操作栏 */}
         <div className="mt-4 shrink-0 h-[50px] relative">
           
-          {/* 状态 1: 紫色大按钮 */}
+          {/* 状态 1:嵌入时的引导按钮 */}
           {!isInputExpanded && isEmbedded && (
             <Button 
               className="w-full h-full bg-[#545cff] hover:bg-[#434bdc] text-white rounded-xl text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-all duration-300"
@@ -142,7 +110,7 @@ export function AiChatPanel({ className, mode = 'standard' }: AiChatPanelProps) 
             </Button>
           )}
 
-          {/* 状态 2: 输入框 + 交互按钮 */}
+          {/* 状态 2: 输入框 + 发送按钮 */}
           {(isInputExpanded || !isEmbedded) && (
             <div className="flex gap-2 items-end h-full animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex-1 relative h-full">
@@ -157,23 +125,21 @@ export function AiChatPanel({ className, mode = 'standard' }: AiChatPanelProps) 
                 />
               </div>
               
-              {/* 交互按钮 */}
+              {/* 交互按钮 (发送 / 停止) */}
               <Button 
                 size="icon" 
                 className={cn(
                   "h-[50px] w-[50px] shrink-0 rounded-xl shadow-sm transition-all duration-300",
                   isLoading 
-                    ? "bg-red-50 text-red-500 border border-red-200 hover:bg-red-100" // 加载中：暂停样式
-                    : "bg-[#545cff] hover:bg-[#434bdc] text-white" // 默认：发送样式
+                    ? "bg-red-50 text-red-500 border border-red-200 hover:bg-red-100" // 加载中样式
+                    : "bg-[#545cff] hover:bg-[#434bdc] text-white" // 默认样式
                 )}
                 onClick={isLoading ? handleStop : handleSubmit} 
                 disabled={!isLoading && !input.trim()}
               >
                 {isLoading ? (
                   <div className="relative flex items-center justify-center group">
-                    {/* 默认显示 Loading */}
                     <Loader2 className="w-5 h-5 animate-spin group-hover:opacity-0 transition-opacity duration-200" />
-                    {/* Hover 显示停止图标 */}
                     <StopCircle className="w-5 h-5 absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 scale-90 group-hover:scale-100" />
                   </div>
                 ) : (

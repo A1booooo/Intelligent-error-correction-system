@@ -330,6 +330,7 @@ export default function KnowledgePage() {
         </Select>
       </div>
 
+
       {/* Graph */}
       <div className="flex-1 h-full relative border-r border-slate-200">
         {isLoading ? (
@@ -416,6 +417,7 @@ export default function KnowledgePage() {
 
                 </div>
               </div>
+              
 
               {/* 底部按钮 - 绝对定位固定在底部 */}
               <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-white via-white to-transparent z-10">
