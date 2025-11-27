@@ -2,6 +2,7 @@ import request from '@/utils/request';
 
 const API_VERSION = 'v1';
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
+
 export interface StreamResponse {
   content?: string;
   text?: string;
@@ -9,43 +10,45 @@ export interface StreamResponse {
   [key: string]: any;
 }
 
-export const aiApi = {
+export interface SolveStreamOptions {
+  question: string;
+  onMessage: (text: string) => void;
+  onError: (err: any) => void;
+  signal?: AbortSignal;
+}
+
 /**
-   * 1. AI流式解题接口
-   */
-solveStream: async (
-  question: string,
-  onMessage: (text: string) => void,
-  onError: (err: any) => void,
-  signal?: AbortSignal,
-) => {
-  const token = localStorage.getItem('token'); 
+ * 1. AI流式解题接口
+ * 原生fetch AccessToken 过期，它会直接失败。
+ */
+export const solveStream = async ({
+  question,
+  onMessage,
+  onError,
+  signal,
+}: SolveStreamOptions) => {
+  const token = localStorage.getItem('token');
 
   try {
-    // 构造完整 URL
-    const url = new URL(`${BASE_URL}/api/${API_VERSION}/solve/stream`);
-    url.searchParams.append('question', question);
+    const endpoint = `${BASE_URL}/api/${API_VERSION}/solve/stream`;
+    const fullUrl = `${endpoint}?question=${encodeURIComponent(question)}`;
 
-    console.log("正在请求 AI 流式接口:", url.toString());
+    console.log('正在请求 AI 流式接口:', fullUrl);
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // 如果后端需要 Bearer Token
-         Authorization: token ? `Bearer ${token}` : '',
-         // 如果后端是用 access-token header
-         // 'access-token': token || ''
+        'Authorization': token ? `Bearer ${token}` : '', 
       },
       body: JSON.stringify({}),
       signal,
     });
 
     if (!response.ok) {
+      // 如果是 401，这里其实无法触发无感刷新，因为没走 axios
       const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, msg: ${errorText}`,
-      );
+      throw new Error(`HTTP error! status: ${response.status}, msg: ${errorText}`);
     }
 
     if (!response.body) throw new Error('Response body is empty');
@@ -54,6 +57,7 @@ solveStream: async (
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -77,6 +81,7 @@ solveStream: async (
           const content = data.content || data.text || '';
           if (content) onMessage(content);
         } catch (_e) {
+          //JSON / 普通文本
           console.warn('Non-JSON SSE data:', dataStr);
           onMessage(dataStr);
         }
@@ -87,39 +92,45 @@ solveStream: async (
       onError(error);
     }
   }
-},
+};
 
-  /**
-   * 2. 发送消息并获取AI回复
-   * Method: POST
-   */
-  sendMessage: (data: { conversationId: string; message: string }) => {
-    return request.post<any>({
-      url: `/api/${API_VERSION}/conversation/send-message`,
-      data,
-    });
-  },
+/**
+ * 2. 发送消息并获取AI回复
+ */
+export const sendMessage = (data: { conversationId: string; message: string }) => {
+  return request.post<any>({
+    url: `/api/${API_VERSION}/conversation/send-message`,
+    data,
+  });
+};
 
-  /**
-   * 3. 基于错题ID的AI对话
-   * Method: POST
-   */
-  solveWithContext: (data: {
-    questionId: string | number;
-    userQuestion: string;
-    questionContent?: string;
-  }) => {
-    return request.post<any>({
-      url: `/api/${API_VERSION}/conversation/solve-with-context`,
-      data,
-    });
-  },
+/**
+ * 3. 基于错题ID的AI对话
+ */
+export const solveWithContext = (data: {
+  questionId: string | number;
+  userQuestion: string;
+  questionContent?: string;
+}) => {
+  return request.post<any>({
+    url: `/api/${API_VERSION}/conversation/solve-with-context`,
+    data,
+  });
+};
 
-  // 4. 删除会话
-  deleteConversation: (conversationId: string) => {
-    return request.delete<void>({
-      url: `/api/${API_VERSION}/conversation/delete/`,
-      params: { conversationId },
-    });
-  },
+/**
+ * 4. 删除会话
+ */
+export const deleteConversation = (conversationId: string) => {
+  return request.delete<void>({
+    url: `/api/${API_VERSION}/conversation/delete/`,
+    params: { conversationId },
+  });
+};
+
+export default {
+  solveStream,
+  sendMessage,
+  solveWithContext,
+  deleteConversation,
 };

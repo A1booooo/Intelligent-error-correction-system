@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { aiApi } from '@/services/apis/aiapi';
+import { solveStream } from '@/services/apis/aiapi';
 
-export interface Message {
+export interface Message {  
   id: string;
   role: 'user' | 'ai';
   content: string;
@@ -74,47 +74,51 @@ export const useAiExplain = () => {
 
     abortControllerRef.current = new AbortController();
 
-    await aiApi.solveStream(
-      userText,
-      (chunk) => {
-        setMessages((prev) => 
-          prev.map((msg) => {
-            if (msg.id === aiMsgId) {
-              return { ...msg, content: msg.content + chunk };
-            }
-            return msg;
-          })
-        );
-      },
-      // onError
-      (err) => {
-        console.error('Stream Error:', err);
-        setMessages((prev) =>
-          prev.map((msg) => {
-            if (msg.id === aiMsgId && msg.role === 'ai') {
-              return {
-                ...msg,
-                content: msg.content + '\n\n[网络请求中断或出错，请重试]',
-                isStreaming: false,
-              };
-            }
-            return msg;
-          })
-        );
-        setIsLoading(false);
-      },
-      abortControllerRef.current.signal
-    );
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    setIsLoading(false);
-    abortControllerRef.current = null;
-    
-    // 请求结束，关闭光标
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
-      )
-    );
+    try {
+      await solveStream({
+        question: userText,
+        onMessage: (chunk) => {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id === aiMsgId) {
+                return { ...msg, content: msg.content + chunk };
+              }
+              return msg;
+            })
+          );
+        },
+        onError: (err) => {
+          console.error('Stream Error:', err);
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id === aiMsgId && msg.role === 'ai') {
+                return {
+                  ...msg,
+                  content: msg.content + '\n[网络请求中断或出错，请重试]',
+                  isStreaming: false,
+                };
+              }
+              return msg;
+            })
+          );
+        },
+        signal: controller.signal,
+      });
+    } catch (e) {
+        console.error("Unknown error:", e);
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
+        )
+      );
+    }
   };
 
   const handleClear = () => {

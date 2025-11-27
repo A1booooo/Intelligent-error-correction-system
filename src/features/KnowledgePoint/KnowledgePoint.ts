@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
-  knowledgeApi,
+  fetchRootPoints,
+  fetchDefinition,
+  fetchRelatedQuestionsOrNote,
+  fetchRelatedPoints,
+  fetchTooltip,
+  markAsMastered,
+  saveNote,
+  renamePoint,
+  addSonPoint,
   KnowledgePointNode,
   RelatedData,
   KnowledgeTooltip,
@@ -31,7 +39,7 @@ export const useKnowledgePage = () => {
   useEffect(() => {
     const fetchRoot = async () => {
       try {
-        const res = await knowledgeApi.fetchRootPoints({ subject: '数学' });
+        const res = await fetchRootPoints({ subject: '数学' });
         if (res.success) setRootPoints(res.data);
       } catch (error) {
         console.error("Failed to fetch root points", error);
@@ -52,8 +60,7 @@ export const useKnowledgePage = () => {
     setStats(null);
 
     // A. 获取定义
-    knowledgeApi
-      .fetchDefinition(activeId)
+      fetchDefinition(activeId)
       .then((res) => {
         if (res.success) {
           setDescription(res.data.content || '暂无详细描述');
@@ -65,7 +72,7 @@ export const useKnowledgePage = () => {
       .catch(() => setDescription('暂无详细描述'));
 
     // B. 获取错题和笔记
-    knowledgeApi.fetchRelatedQuestionsOrNote(activeId).then((res) => {
+    fetchRelatedQuestionsOrNote(activeId).then((res) => {
       if (res.success) {
         setRelatedData(res.data);
         setNoteInput(res.data.note || '');
@@ -73,12 +80,12 @@ export const useKnowledgePage = () => {
     });
 
     // C. 获取相关知识点
-    knowledgeApi.fetchRelatedPoints(activeId).then((res) => {
+    fetchRelatedPoints(activeId).then((res) => {
       if (res.success) setRelatedPoints(res.data);
     });
 
     // D. 获取统计数据 (用于仪表盘)
-    knowledgeApi.fetchTooltip(activeId).then((res) => {
+    fetchTooltip(activeId).then((res) => {
       if (res.success) setStats(res.data);
     });
 
@@ -88,7 +95,7 @@ export const useKnowledgePage = () => {
 
   const handleMarkMastered = async () => {
     if (!activeId) return;
-    const res = await knowledgeApi.markAsMastered(activeId);
+    const res = await markAsMastered(activeId);
     if (res.success) {
       setIsMastered(true);
     }
@@ -96,17 +103,17 @@ export const useKnowledgePage = () => {
 
   const handleSaveNote = async () => {
     if (!activeId) return;
-    await knowledgeApi.saveNote(activeId, noteInput);
+    await saveNote(activeId, noteInput);
   };
 
   const handleRename = async () => {
     if (!activeId || !newName.trim()) return;
-    const res = await knowledgeApi.renamePoint(activeId, newName);
+    const res = await renamePoint(activeId, newName);
     if (res.success) {
       setActiveTitle(newName);
       setRefreshTreeTrigger((p) => p + 1); // 触发树刷新
       // 刷新根节点以防万一
-      knowledgeApi.fetchRootPoints({ subject: '数学' }).then((r) => {
+      fetchRootPoints({ subject: '数学' }).then((r) => {
         if (r.success) setRootPoints(r.data);
       });
       setIsRenameOpen(false);
@@ -115,7 +122,7 @@ export const useKnowledgePage = () => {
 
   const handleAddChild = async () => {
     if (!operatingId || !newChildName.trim()) return;
-    const res = await knowledgeApi.addSonPoint(operatingId, {
+    const res = await addSonPoint(operatingId, {
       pointName: newChildName,
       pointDesc: newChildDesc,
     });
