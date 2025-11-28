@@ -24,12 +24,12 @@ export const useKnowledgePage = () => {
   const [relatedData, setRelatedData] = useState<RelatedData | null>(null);
   const [relatedPoints, setRelatedPoints] = useState<KnowledgePointNode[]>([]);
   const [isMastered, setIsMastered] = useState(false);
-  const [stats, setStats] = useState<KnowledgeTooltip | null>(null); 
+  const [stats, setStats] = useState<KnowledgeTooltip | null>(null);
 
   const [noteInput, setNoteInput] = useState('');
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isAddChildOpen, setIsAddChildOpen] = useState(false);
-  
+
   const [newName, setNewName] = useState('');
   const [newChildName, setNewChildName] = useState('');
   const [newChildDesc, setNewChildDesc] = useState('');
@@ -42,7 +42,7 @@ export const useKnowledgePage = () => {
         const res = await fetchRootPoints({ subject: '数学' });
         if (res.success) setRootPoints(res.data);
       } catch (error) {
-        console.error("Failed to fetch root points", error);
+        console.error('Failed to fetch root points', error);
       }
     };
     fetchRoot();
@@ -60,7 +60,7 @@ export const useKnowledgePage = () => {
     setStats(null);
 
     // A. 获取定义
-      fetchDefinition(activeId)
+    fetchDefinition(activeId)
       .then((res) => {
         if (res.success) {
           setDescription(res.data.content || '暂无详细描述');
@@ -88,7 +88,6 @@ export const useKnowledgePage = () => {
     fetchTooltip(activeId).then((res) => {
       if (res.success) setStats(res.data);
     });
-
   }, [activeId]);
 
   // --- 交互处理函数 ---
@@ -156,9 +155,9 @@ export const useKnowledgePage = () => {
     relatedData,
     relatedPoints,
     isMastered,
-    stats, 
+    stats,
     refreshTreeTrigger,
-    
+
     // Form & UI State
     noteInput,
     setNoteInput,

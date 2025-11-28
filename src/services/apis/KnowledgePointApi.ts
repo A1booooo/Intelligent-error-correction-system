@@ -43,7 +43,6 @@ export interface KnowledgeStatistic {
   [key: string]: number | undefined;
 }
 
-
 //  1. 获取根知识点
 
 export const fetchRootPoints = (params: { subject: string }) => {
@@ -86,7 +85,7 @@ export const fetchRelatedPoints = (knowledgeId: number) => {
   });
 };
 
-//  6. 获取相关错题或笔记 
+//  6. 获取相关错题或笔记
 
 export const fetchRelatedQuestionsOrNote = (knowledgeId: number) => {
   return request.get<RelatedData>({

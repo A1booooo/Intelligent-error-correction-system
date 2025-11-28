@@ -1,6 +1,5 @@
 import request from '@/utils/request';
 
-
 export interface GenerationData {
   questionId: string;
   questionContent: string;
@@ -11,7 +10,6 @@ export interface JudgeData {
   result?: string;
 }
 
-
 /**
  * 1. AI 巩固出题
  * Method: POST
@@ -19,7 +17,7 @@ export interface JudgeData {
 export const generateQuestion = (mistakeQuestionId: number) => {
   return request.post<GenerationData>({
     url: '/api/question/generation',
-    params: { mistakeQuestionId }, 
+    params: { mistakeQuestionId },
   });
 };
 
@@ -39,7 +37,7 @@ export const judgeQuestion = (questionId: string, answer: string) => {
  * Method: POST
  */
 export const recordQuestion = (questionId: string) => {
-  return request.post<void>({ 
+  return request.post<void>({
     url: '/api/question/record',
     params: { questionId },
   });

@@ -8,7 +8,7 @@ import {
   OnNodesChange,
   OnEdgesChange,
   NodeChange,
-  EdgeChange
+  EdgeChange,
 } from 'reactflow';
 
 const initialNodes: Node[] = [
@@ -29,7 +29,7 @@ const initialNodes: Node[] = [
       fontSize: '16px',
       fontWeight: 'bold',
       textAlign: 'center',
-      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
     },
   },
   {
@@ -91,7 +91,7 @@ const initialNodes: Node[] = [
   },
 ];
 
-//  (黑色曲线) 
+//  (黑色曲线)
 const initialEdges: Edge[] = [
   {
     id: 'e101-201',
@@ -124,13 +124,15 @@ export const useKnowledgeGraph = () => {
   const [isLoading] = useState(false);
 
   const onNodesChange: OnNodesChange = useCallback(
-    (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
+    (changes: NodeChange[]) =>
+      setNodes((nds) => applyNodeChanges(changes, nds)),
+    [],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
-    (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
+    (changes: EdgeChange[]) =>
+      setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [],
   );
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {

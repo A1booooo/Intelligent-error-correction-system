@@ -39,7 +39,7 @@ export const solveStream = async ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '', 
+        Authorization: token ? `Bearer ${token}` : '',
       },
       body: JSON.stringify({}),
       signal,
@@ -48,7 +48,9 @@ export const solveStream = async ({
     if (!response.ok) {
       // 如果是 401，这里其实无法触发无感刷新，因为没走 axios
       const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, msg: ${errorText}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, msg: ${errorText}`,
+      );
     }
 
     if (!response.body) throw new Error('Response body is empty');
@@ -57,7 +59,6 @@ export const solveStream = async ({
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -97,7 +98,10 @@ export const solveStream = async ({
 /**
  * 2. 发送消息并获取AI回复
  */
-export const sendMessage = (data: { conversationId: string; message: string }) => {
+export const sendMessage = (data: {
+  conversationId: string;
+  message: string;
+}) => {
   return request.post<any>({
     url: `/api/${API_VERSION}/conversation/send-message`,
     data,

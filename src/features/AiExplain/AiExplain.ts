@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { solveStream } from '@/services/apis/aiapi';
 
-export interface Message {  
+export interface Message {
   id: string;
   role: 'user' | 'ai';
   content: string;
   isStreaming?: boolean;
 }
-// 1. 生成唯一ID的工具函数 
+// 1. 生成唯一ID的工具函数
 const generateId = () => {
   return Date.now().toString() + Math.random().toString(36).slice(2, 9);
 };
@@ -36,13 +36,13 @@ export const useAiExplain = () => {
       abortControllerRef.current = null;
     }
     setIsLoading(false);
-    
+
     setMessages((prev) => {
       const newArr = [...prev];
       if (newArr.length > 0) {
         const lastMsg = newArr[newArr.length - 1];
         if (lastMsg.role === 'ai' && lastMsg.isStreaming) {
-           newArr[newArr.length - 1] = { ...lastMsg, isStreaming: false };
+          newArr[newArr.length - 1] = { ...lastMsg, isStreaming: false };
         }
       }
       return newArr;
@@ -87,7 +87,7 @@ export const useAiExplain = () => {
                 return { ...msg, content: msg.content + chunk };
               }
               return msg;
-            })
+            }),
           );
         },
         onError: (err) => {
@@ -102,21 +102,21 @@ export const useAiExplain = () => {
                 };
               }
               return msg;
-            })
+            }),
           );
         },
         signal: controller.signal,
       });
     } catch (e) {
-        console.error("Unknown error:", e);
+      console.error('Unknown error:', e);
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
 
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
-        )
+          msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
+        ),
       );
     }
   };
@@ -125,7 +125,7 @@ export const useAiExplain = () => {
     if (messages.length === 0) return;
     setMessages([]);
     setInput('');
-    handleStop(); 
+    handleStop();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
