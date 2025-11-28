@@ -48,31 +48,35 @@ export default function Home() {
   });
 
   useEffect(() => {
-    GetOverview().then((res: OverviewResponse) => {
-      setOverview(res);
-      console.log(res);
-    });
-    getStatistics().then((res: AnalysisData) => {
-      setStatistics(res);
-      console.log(res);
-    });
-    GetOverDue().then((res: object) => {
-      /* setOverdue(res); */
-      console.log(res);
-    });
-    GetTrickyKnowledge().then((res: object) => {
-      /* setTrickyKnowledge(res); */
-      console.log(res);
-    });
-    GetKeyPoint().then((res: object) => {
-      setKeyPoint(
-        res as Array<{
-          knowledgePoint: string;
-          reviewReason: string;
-        }>,
-      );
-      console.log(res);
-    });
+    const fetchData = async () => {
+      try {
+        const overview = await GetOverview();
+        setOverview(overview);
+        console.log(overview);
+
+        const statistics = await getStatistics();
+        setStatistics(statistics);
+        console.log(statistics);
+
+        const overdue = await GetOverDue();
+        console.log(overdue);
+
+        const tricky = await GetTrickyKnowledge();
+        console.log(tricky);
+
+        const keyPoint = await GetKeyPoint();
+        setKeyPoint(
+          keyPoint as Array<{
+            knowledgePoint: string;
+            reviewReason: string;
+          }>,
+        );
+        console.log(keyPoint);
+      } catch (error) {
+        console.error('请求失败', error);
+      }
+    };
+    fetchData();
   }, []);
 
   return (
