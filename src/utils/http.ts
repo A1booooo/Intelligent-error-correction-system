@@ -11,7 +11,6 @@ import {
   cancelRequest,
   cancelAllRequest,
 } from './requestQueue';
-import { IResponse } from './type';
 
 const REFRESH_URL = '/api/userAccount/refreshToken';
 let isRefreshing = false;
@@ -24,11 +23,12 @@ const axiosInstance: AxiosInstance = axios.create({
 
 const getRefreshToken = async (): Promise<string | null> => {
   try {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = localStorage.getItem('refresh-token');
+
     if (!refreshToken) return null;
 
     const { data } = await axios.post(
-      `${import.meta.env.VITE_BASE_AXIOS_URL}${REFRESH_URL}`,
+      `${import.meta.env.VITE_BASE_URL}${REFRESH_URL}`,
       {},
       {
         headers: {
@@ -40,9 +40,9 @@ const getRefreshToken = async (): Promise<string | null> => {
     if (data.code === 200 && data.data) {
       const { newAccessToken, newRefreshToken } = data.data;
 
-      localStorage.setItem('token', newAccessToken);
+      localStorage.setItem('access-token', newAccessToken);
       if (newRefreshToken) {
-        localStorage.setItem('refreshToken', newRefreshToken);
+        localStorage.setItem('refresh-token', newRefreshToken);
       }
       return newAccessToken;
     }
@@ -58,10 +58,10 @@ axiosInstance.interceptors.request.use(
     removeRequest(config);
     addRequest(config);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access-token');
 
     if (token && config.url !== REFRESH_URL && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers['access-token'] = token;
     }
     return config;
   },
@@ -73,9 +73,32 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     removeRequest(response.config);
+    if (response.data?.code === 401) {
+      const error = new AxiosError(
+        'Token expired',
+        '401',
+        response.config,
+        null,
+        { status: 401 } as AxiosResponse,
+      );
+      return Promise.reject(error);
+    }
+
+    if (response.data?.code === -500) {
+      const error = new AxiosError(
+        'Server error',
+        '-500',
+        response.config,
+        null,
+        { status: 500 } as AxiosResponse,
+      );
+      return Promise.reject(error);
+    }
+
     return response.data;
   },
   async (error: AxiosError) => {
+    console.log(error.response?.status);
     const config = error.config as InternalAxiosRequestConfig;
 
     if (config) {
@@ -83,16 +106,17 @@ axiosInstance.interceptors.response.use(
     }
 
     if (
-      error.response?.status === 401 &&
+      error.response?.status === 500 &&
       config &&
       config.url !== REFRESH_URL
     ) {
       // Token 过期，尝试刷新
       if (isRefreshing) {
+        console.log('Token 刷新中，等待重试');
         return new Promise((resolve) => {
           requestsQueue.push((newToken) => {
             if (config.headers) {
-              config.headers['Authorization'] = newToken;
+              config.headers['access-token'] = newToken;
             }
             resolve(axiosInstance(config)); // 重新发起请求
           });
@@ -108,7 +132,7 @@ axiosInstance.interceptors.response.use(
           requestsQueue = [];
 
           if (config.headers) {
-            config.headers['Authorization'] = newToken;
+            config.headers['access-token'] = newToken;
           }
           return axiosInstance(config);
         } else {
