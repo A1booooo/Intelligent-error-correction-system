@@ -1,31 +1,54 @@
 import { PieChart, Pie, Cell } from 'recharts';
+import { useMemo } from 'react';
 
 import { ChartContainer } from '../ui/chart';
 import { ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
-const pieData = [
-  { name: '数学', value: 35, color: 'var(--chart-1)' },
-  { name: '物理', value: 25, color: 'var(--chart-2)' },
+interface PieDataItem {
+  [key: string]: number;
+}
+
+interface ChartPieDonutProps {
+  data?: PieDataItem[];
+}
+
+const COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ];
 
-const chartConfig = {
-  数学: { label: '数学', color: 'var(--chart-1)' },
-  物理: { label: '物理', color: 'var(--chart-2)' },
-};
+const chartConfig = {};
 
-export function ChartPieDonut() {
+export function ChartPieDonut({ data }: ChartPieDonutProps) {
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    return data.map((item, index) => {
+      const name = Object.keys(item)[0];
+      const value = item[name];
+
+      return {
+        name: name,
+        value: value,
+        color: COLORS[index % COLORS.length],
+      };
+    });
+  }, [data]);
   return (
     <ChartContainer config={chartConfig} className="h-[200px]">
       <PieChart>
         <Pie
-          data={pieData}
+          data={chartData}
           cx="50%"
           cy="50%"
           innerRadius={40}
           outerRadius={60}
           dataKey="value"
         >
-          {pieData.map((entry, index) => (
+          {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>

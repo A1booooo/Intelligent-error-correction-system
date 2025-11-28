@@ -7,29 +7,30 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-export const description = 'A multiple line chart';
+interface ChartData {
+  month: string;
+  total: number;
+  reviewed: number;
+}
 
-const chartData = [
-  { month: 'January', wrong: 186, review: 80 },
-  { month: 'February', wrong: 305, review: 200 },
-  { month: 'March', wrong: 237, review: 120 },
-  { month: 'April', wrong: 73, review: 190 },
-  { month: 'May', wrong: 209, review: 130 },
-  { month: 'June', wrong: 214, review: 140 },
-];
+interface ChartLineMultipleProps {
+  data?: ChartData[];
+}
 
 const chartConfig = {
-  wrong: {
-    label: 'wrong',
+  total: {
+    label: '错题总数',
     color: 'var(--chart-1)',
   },
-  review: {
-    label: 'review',
+  reviewed: {
+    label: '已复习',
     color: 'var(--chart-2)',
   },
 } satisfies ChartConfig;
 
-export function ChartLineMultiple() {
+export function ChartLineMultiple({ data }: ChartLineMultipleProps) {
+  const chartData = data || [];
+
   return (
     <Card>
       <CardContent>
@@ -48,20 +49,19 @@ export function ChartLineMultiple() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
-              dataKey="wrong"
+              dataKey="total"
               type="monotone"
-              stroke="var(--color-wrong)"
+              stroke="var(--color-total)"
               strokeWidth={2}
               dot={false}
             />
             <Line
-              dataKey="review"
+              dataKey="reviewed"
               type="monotone"
-              stroke="var(--color-review)"
+              stroke="var(--color-reviewed)"
               strokeWidth={2}
               dot={false}
             />

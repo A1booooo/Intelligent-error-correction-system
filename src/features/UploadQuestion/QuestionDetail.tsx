@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
+
 import {
   Card,
   CardContent,
@@ -8,13 +10,15 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { StopCircle, Loader2 } from 'lucide-react';
 import { useStreamingAI } from '@/hooks/useStreamingAI';
-import { AiChatPanel } from "@/components/business/AiChatPanel";
+import { AiChatPanel } from '@/components/business/AiChatPanel';
+import { useEffect } from 'react';
 
-export default function UploadQuestionPage() {
-  const [originalQuestion, setOriginalQuestion] = useState('');
+export default function QuestionDetailPage() {
+  const { result } = useLocation().state;
+  const [originalQuestion] = useState(result);
+  console.log(originalQuestion);
 
   const {
     content: aiSolution,
@@ -31,20 +35,15 @@ export default function UploadQuestionPage() {
     },
   });
 
-  const [errorReasons, setErrorReasons] = useState({
-    careless: false,
-    knowledgeGap: false,
-    calculationError: false,
-    timeShortage: false,
-    other: false,
-  });
+  const [selectedReason, setSelectedReason] = useState<string>('');
+  const [otherReasonDetail, setOtherReasonDetail] = useState('');
 
   const errorReasonsList = [
-    { id: 'careless', label: '重心马虎', color: 'bg-primary' },
+    { id: 'careless', label: '粗心马虎', color: 'bg-primary' },
     { id: 'knowledgeGap', label: '知识点不熟悉', color: 'bg-primary' },
     { id: 'calculationError', label: '计算错误', color: 'bg-primary' },
     { id: 'timeShortage', label: '时间不够', color: 'bg-primary' },
-    { id: 'other', label: '其他：', color: 'bg-primary' },
+    { id: 'other', label: '其他', color: 'bg-primary' },
   ];
 
   /* const quickQuestions = [
@@ -52,13 +51,6 @@ export default function UploadQuestionPage() {
     '请再做一种考试重点',
     '有哪一个考察重点和解析？',
   ]; */
-
-  const handleErrorReasonChange = (reasonId: string) => {
-    setErrorReasons((prev) => ({
-      ...prev,
-      [reasonId]: !prev[reasonId as keyof typeof prev],
-    }));
-  };
 
   // 提交题目获取AI解答
   const handleGetAISolution = async () => {
@@ -69,6 +61,12 @@ export default function UploadQuestionPage() {
 
     await streamAIResponse(originalQuestion);
   };
+
+  useEffect(() => {
+    if (originalQuestion) {
+      streamAIResponse(originalQuestion);
+    }
+  }, []);
 
   return (
     <div className="bg-background p-6 h-[93svh] overflow-hidden">
@@ -81,14 +79,7 @@ export default function UploadQuestionPage() {
             <CardHeader>
               <CardTitle className="text-lg">原题</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-y-auto">
-              <Textarea
-                placeholder="请输入题目内容..."
-                value={originalQuestion}
-                onChange={(e) => setOriginalQuestion(e.target.value)}
-                className="min-h-[200px] resize-none"
-              />
-            </CardContent>
+            <CardContent className="overflow-y-auto min-h-[200px]"></CardContent>
             <CardFooter>
               <Button
                 onClick={handleGetAISolution}
@@ -165,26 +156,40 @@ export default function UploadQuestionPage() {
               <CardTitle className="text-lg">错因分析</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {errorReasonsList.map((reason) => (
-                <div key={reason.id} className="flex items-center gap-3">
-                  <div className={`size-2 rounded-full ${reason.color}`} />
-                  <label
-                    htmlFor={reason.id}
-                    className="flex flex-1 items-center gap-2 cursor-pointer"
-                  >
-                    <span className="text-sm text-foreground">
-                      {reason.label}
-                    </span>
-                  </label>
-                  <Checkbox
-                    checked={
-                      errorReasons[reason.id as keyof typeof errorReasons]
-                    }
-                    onCheckedChange={() => handleErrorReasonChange(reason.id)}
-                    id={reason.id}
-                  />
-                </div>
-              ))}
+              <div className="flex flex-col gap-3 relative">
+                {errorReasonsList.map((reason) => (
+                  <div key={reason.id} className="flex flex-col gap-2">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => setSelectedReason(reason.id)}
+                    >
+                      <div className={`size-2 rounded-full ${reason.color}`} />
+                      <label className="flex flex-1 items-center gap-2 cursor-pointer">
+                        <span className="text-sm text-foreground">
+                          {reason.label}
+                        </span>
+                      </label>
+                      <Textarea
+                        placeholder="请输入具体的错误原因..."
+                        value={otherReasonDetail}
+                        onChange={(e) => setOtherReasonDetail(e.target.value)}
+                        className={`w-[73%] h-[45px] absolute left-17 transition-opacity duration-300 ${reason.id === 'other' && selectedReason === 'other' ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      <div
+                        className={`flex size-4 items-center justify-center rounded-full border border-primary ${
+                          selectedReason === reason.id
+                            ? 'bg-primary text-primary-foreground duration-300'
+                            : 'opacity-50 duration-300'
+                        }`}
+                      >
+                        {selectedReason === reason.id && (
+                          <div className="size-2 rounded-full bg-current" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
@@ -206,17 +211,21 @@ export default function UploadQuestionPage() {
               <CardTitle className="text-lg">注意事项</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                深度学习中...
-              </div>
+              <Textarea
+                placeholder="请输入笔记"
+                className="h-[125px] resize-none"
+              />
             </CardContent>
           </Card>
         </div>
 
         <div className="lg:col-span-4 h-full overflow-hidden">
-          <AiChatPanel mode="embedded" className="h-full shadow-lg border-slate-200" />
+          <AiChatPanel
+            mode="embedded"
+            className="h-full shadow-lg border-slate-200"
+          />
+        </div>
       </div>
-    </div>
     </div>
   );
 }

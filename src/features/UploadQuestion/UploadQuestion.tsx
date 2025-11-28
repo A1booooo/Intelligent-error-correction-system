@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { extractFirst } from '@/services/uploadQuestion';
 
 export default function UploadQuestionPage() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function UploadQuestionPage() {
 
     const ext = selectedFile.name.split('.').pop()?.toLowerCase();
     let fileType = '';
-    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') fileType = 'image';
+    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') fileType = 'png';
     else if (ext === 'pdf') fileType = 'pdf';
     else if (ext === 'doc' || ext === 'docx') fileType = 'word';
     else {
@@ -32,14 +33,11 @@ export default function UploadQuestionPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('type', fileType);
-
     try {
-      /* const res = await axios.post('http://localhost:3000/upload', formData); */
+      const res = await extractFirst(selectedFile, fileType);
+      console.log(res);
       navigate('/upload-question/question-detail', {
-        state: { file: selectedFile },
+        state: { result: res },
       });
     } catch (err) {
       console.error(err);

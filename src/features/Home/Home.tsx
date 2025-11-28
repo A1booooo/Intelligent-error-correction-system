@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +15,65 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { ChartLineMultiple } from '@/components/layout/ChartLineMultiple';
+import {
+  GetOverview,
+  GetOverDue,
+  GetTrickyKnowledge,
+  GetKeyPoint,
+} from '@/services/home';
+import { getStatistics } from '@/services/myQuestion';
+import { OverviewResponse, AnalysisData, ChartData } from '@/utils/type';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [overview, setOverview] = useState<OverviewResponse>({
+    questionsNum: 0,
+    reviewRate: '',
+    hardQuestions: 0,
+    learningTime: '',
+  });
+  /* const [overdue, setOverdue] = useState<Object>({});
+  const [trickyKnowledge, setTrickyKnowledge] = useState<Object>({}); */
+  const [keyPoint, setKeyPoint] = useState<
+    Array<{
+      knowledgePoint: string;
+      reviewReason: string;
+    }>
+  >([]);
+
+  const [statistics, setStatistics] = useState<AnalysisData>({
+    subjectDistribution: [],
+    knowledgeDistribution: [],
+    reviewTrend: [],
+  });
+
+  useEffect(() => {
+    GetOverview().then((res: OverviewResponse) => {
+      setOverview(res);
+      console.log(res);
+    });
+    getStatistics().then((res: AnalysisData) => {
+      setStatistics(res);
+      console.log(res);
+    });
+    GetOverDue().then((res: object) => {
+      /* setOverdue(res); */
+      console.log(res);
+    });
+    GetTrickyKnowledge().then((res: object) => {
+      /* setTrickyKnowledge(res); */
+      console.log(res);
+    });
+    GetKeyPoint().then((res: object) => {
+      setKeyPoint(
+        res as Array<{
+          knowledgePoint: string;
+          reviewReason: string;
+        }>,
+      );
+      console.log(res);
+    });
+  }, []);
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 overflow-auto">
@@ -30,7 +87,9 @@ export default function Home() {
                 <Brain className="size-5" />
                 <span className="text-sm">总错题数</span>
               </div>
-              <div className="text-4xl font-bold">1</div>
+              <div className="text-4xl font-bold">
+                {overview?.questionsNum ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -40,7 +99,9 @@ export default function Home() {
                 <RefreshCw className="size-5" />
                 <span className="text-sm">复习巩固率</span>
               </div>
-              <div className="text-4xl font-bold">100%</div>
+              <div className="text-4xl font-bold">
+                {overview?.reviewRate ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -50,7 +111,9 @@ export default function Home() {
                 <Target className="size-5" />
                 <span className="text-sm">易错知识点</span>
               </div>
-              <div className="text-4xl font-bold">2</div>
+              <div className="text-4xl font-bold">
+                {overview?.hardQuestions ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -60,7 +123,9 @@ export default function Home() {
                 <Clock className="size-5" />
                 <span className="text-sm">本周学习时长</span>
               </div>
-              <div className="text-4xl font-bold">3h</div>
+              <div className="text-4xl font-bold">
+                {overview?.learningTime ?? 0}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -115,9 +180,11 @@ export default function Home() {
                     <TrendingUp className="size-5 text-purple-500" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium mb-1">一元二次函数</div>
+                    <div className="font-medium mb-1">
+                      {keyPoint[0]?.knowledgePoint || '暂无数据'}
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      你最近在此知识点失误率增长中需复习
+                      {keyPoint[0]?.reviewReason || '1'}
                     </div>
                   </div>
                 </div>
@@ -131,9 +198,11 @@ export default function Home() {
                     <TrendingUp className="size-5 text-purple-500" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium mb-1">圆锥曲线</div>
+                    <div className="font-medium mb-1">
+                      {keyPoint[1]?.knowledgePoint || '暂无数据'}
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      这一周上有7项错题和重难题分类
+                      {keyPoint[1]?.reviewReason || '1'}
                     </div>
                   </div>
                 </div>
@@ -205,7 +274,9 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-[2]">
-                <ChartLineMultiple />
+                <ChartLineMultiple
+                  data={statistics.reviewTrend as ChartData[]}
+                />
               </div>
             </CardContent>
           </Card>
