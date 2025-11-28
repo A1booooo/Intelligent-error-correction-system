@@ -23,7 +23,7 @@ import {
   getQuestionList,
   deleteQuestion,
   getStatistics,
-} from '@/services/myQuestion';
+} from '@/services/myQuestion/myQuestion';
 import {
   Pagination,
   PaginationContent,

@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Login } from '@/services/user';
+import { Login } from '@/services/user/user';
 import { userAtom } from '@/atoms/user';
 import { useAtom } from 'jotai';
 

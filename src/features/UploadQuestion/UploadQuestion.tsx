@@ -10,7 +10,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { extractFirst } from '@/services/uploadQuestion';
+import { extractFirst } from '@/services/ocr/uploadQuestion';
 
 export default function UploadQuestionPage() {
   const navigate = useNavigate();

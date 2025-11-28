@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
-import { Signup, SendCode } from '../../services/user';
+import { Signup, SendCode } from '../../services/user/user';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 

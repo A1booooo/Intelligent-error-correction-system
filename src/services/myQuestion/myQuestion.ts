@@ -1,13 +1,5 @@
-import request from '../utils/request';
-import { AnalysisData } from '../utils/type';
-
-interface QuestionListParams {
-  subjects?: string[];
-  errorTypes?: string[];
-  timeRanges?: string[];
-  page?: number;
-  size?: number;
-}
+import request from '../../utils/request';
+import { AnalysisData, QuestionListParams } from './type';
 
 export async function getQuestionList(params: QuestionListParams) {
   const res = await request.get({

@@ -10,8 +10,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { ResetPassword } from '@/services/user';
-import { SendCode } from '@/services/user';
+import { ResetPassword } from '@/services/user/user';
+import { SendCode } from '@/services/user/user';
 import { toast } from 'sonner';
 
 export function ForgotPasswordForm({

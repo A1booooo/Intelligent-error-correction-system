@@ -20,8 +20,8 @@ import {
   GetOverDue,
   GetTrickyKnowledge,
   GetKeyPoint,
-} from '@/services/home';
-import { getStatistics } from '@/services/myQuestion';
+} from '@/services/home/home';
+import { getStatistics } from '@/services/myQuestion/myQuestion';
 import { OverviewResponse, AnalysisData, ChartData } from '@/utils/type';
 
 export default function Home() {

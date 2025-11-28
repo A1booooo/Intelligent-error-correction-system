@@ -1,5 +1,5 @@
-import request from '../utils/request';
-import { OverviewResponse } from '../utils/type';
+import request from '../../utils/request';
+import { OverviewResponse } from '../../services/home/type';
 
 export async function GetOverview(): Promise<OverviewResponse> {
   const res = await request.get<OverviewResponse>({
