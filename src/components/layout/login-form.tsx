@@ -41,7 +41,11 @@ export function LoginForm({
       Login(formData).then((res) => {
         if (res.code === 200) {
           toast.success('登录成功');
-          setUser({ userId: res.data.userId });
+          setUser({
+            userId: res.data.userId,
+            userName: res.data.userName,
+            userAccount: formData.userAccount,
+          });
           localStorage.setItem('access-token', res.data.accessToken);
           localStorage.setItem('refresh-token', res.data.refreshToken);
           navigate('/');

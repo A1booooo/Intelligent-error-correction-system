@@ -11,39 +11,43 @@ import {
   SidebarRail,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-
-// This is sample data.
-const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  navMain: [
-    {
-      title: '主页',
-      url: '/home',
-      icon: House,
-    },
-    {
-      title: '上传错题',
-      url: '/upload-question',
-      icon: Upload,
-    },
-    {
-      title: '我的错题',
-      url: '/my-question',
-      icon: BookOpen,
-    },
-    {
-      title: '知识点库',
-      url: '/knowledge-base',
-      icon: List,
-    },
-  ],
-};
+import { useAtomValue } from 'jotai';
+import { userAtom } from '../../atoms/user';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const user = useAtomValue(userAtom);
+
+  // This is sample data.
+  const data = {
+    user: {
+      name: user.userName,
+      email: user.userAccount,
+      avatar: localStorage.getItem('avatar') || '',
+    },
+    navMain: [
+      {
+        title: '主页',
+        url: '/home',
+        icon: House,
+      },
+      {
+        title: '上传错题',
+        url: '/upload-question',
+        icon: Upload,
+      },
+      {
+        title: '我的错题',
+        url: '/my-question',
+        icon: BookOpen,
+      },
+      {
+        title: '知识点库',
+        url: '/knowledge-base',
+        icon: List,
+      },
+    ],
+  };
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

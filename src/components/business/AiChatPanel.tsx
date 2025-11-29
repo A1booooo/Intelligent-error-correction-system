@@ -62,15 +62,9 @@ export function AiChatPanel({
   }, [isInputExpanded]);
 
   return (
-    <Card
-      className={cn(
-        'flex flex-col h-full overflow-hidden',
-        'border border-slate-800 shadow-lg bg-white rounded-xl',
-        className,
-      )}
-    >
+    <Card className="shadow-lg h-full gap-0">
       {/* 头部标题 */}
-      <CardHeader className="pb-2 pt-4 px-4 shrink-1 bg-white">
+      <CardHeader>
         <CardTitle className="text-lg">
           {isEmbedded ? 'AI问答区' : '智能解析与问答'}
         </CardTitle>
@@ -81,15 +75,15 @@ export function AiChatPanel({
         {/* 消息列表容器 (灰色背景) */}
         <div
           className={cn(
-            'flex-1 rounded-xl overflow-hidden relative flex flex-col',
-            isEmbedded ? 'bg-[#f9fafb]' : 'bg-slate-50',
+            'flex-1 rounded-xl overflow-hidden relative flex flex-col pt-3',
+            isEmbedded ? 'bg-background' : 'bg-slate-50',
           )}
         >
-          <div className="flex-1 h-full overflow-y-auto p-3 space-y-4 scroll-smooth">
+          <div className="flex-1 h-full overflow-y-auto p-3 space-y-4 scroll-smooth pt-0">
             {/* 1. 默认欢迎语 (仅嵌入模式且无消息时显示) */}
             {isEmbedded && messages.length === 0 && (
               <div className="flex justify-start animate-in fade-in slide-in-from-left-2 duration-300">
-                <div className="bg-[#14b8a6] text-white px-4 py-3 rounded-2xl rounded-tl-none text-sm shadow-sm leading-relaxed max-w-[90%]">
+                <div className="bg-secondary text-white px-4 py-3 rounded-2xl text-sm shadow-sm leading-relaxed max-w-[90%]">
                   欢迎使用智能错题提问系统，请您根据什么问题提问
                 </div>
               </div>
@@ -100,7 +94,7 @@ export function AiChatPanel({
               <div
                 key={msg.id}
                 className={cn(
-                  'flex w-full',
+                  'flex w-full px-1',
                   msg.role === 'user' ? 'justify-end' : 'justify-start',
                 )}
               >
@@ -108,8 +102,8 @@ export function AiChatPanel({
                   className={cn(
                     'px-4 py-2.5 rounded-2xl shadow-sm max-w-[90%]',
                     msg.role === 'user'
-                      ? 'bg-[#545cff] text-white rounded-tr-none' // 用户: 紫色
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none', // AI: 白色
+                      ? 'bg-primary text-white' // 用户: 紫色
+                      : 'bg-secondary text-white border border-slate-200 ', // AI: 白色
                   )}
                 >
                   {/* StreamingText 组件 */}
@@ -129,7 +123,7 @@ export function AiChatPanel({
           {/* 状态 1:嵌入时的引导按钮 */}
           {!isInputExpanded && isEmbedded && (
             <Button
-              className="w-full h-full bg-[#545cff] hover:bg-[#434bdc] text-white rounded-xl text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-all duration-300"
+              className="w-full h-full bg-primary hover:bg-[#434bdc] text-white rounded-xl text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer"
               onClick={() => setIsInputExpanded(true)}
             >
               <Plus className="w-4 h-4" />

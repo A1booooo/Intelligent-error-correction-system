@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Logout } from '../../services/user/user';
 import { useNavigate } from 'react-router-dom';
+import { useAtom } from 'jotai';
+import { userAtom } from '../../atoms/user';
 
 export function NavUser({
   user,
@@ -30,6 +32,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const [, setUser] = useAtom(userAtom);
 
   return (
     <SidebarMenu>
@@ -81,7 +84,9 @@ export function NavUser({
               className="cursor-pointer transition-all duration-200"
               onClick={() => {
                 Logout().then(() => {
+                  setUser({ userId: '', userName: '', userAccount: '' });
                   localStorage.removeItem('access-token');
+                  localStorage.removeItem('refresh-token');
                   navigate('/login');
                 });
               }}

@@ -14,7 +14,7 @@ export default function SignupPage() {
             智能纠错系统
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-center translate-y-[-50px]">
+        <div className="flex flex-1 items-center justify-center translate-y-[-30px]">
           <div className="w-full max-w-xs">
             <SignupForm />
           </div>
