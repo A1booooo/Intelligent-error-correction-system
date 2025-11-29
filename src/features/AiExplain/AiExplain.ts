@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { solveStream } from '@/services/apis/aiapi';
+import { solveStream } from '@/services/apis/aiapi/aiapi';
 
 export interface Message {  
   id: string;
@@ -97,7 +97,7 @@ export const useAiExplain = () => {
               if (msg.id === aiMsgId && msg.role === 'ai') {
                 return {
                   ...msg,
-                  content: msg.content + '\n[网络请求中断或出错，请重试]',
+                  content: msg.content + '[网络请求中断或出错，请重试]',
                   isStreaming: false,
                 };
               }

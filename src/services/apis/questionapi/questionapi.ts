@@ -1,16 +1,5 @@
 import request from '@/utils/request';
-
-
-export interface GenerationData {
-  questionId: string;
-  questionContent: string;
-}
-
-export interface JudgeData {
-  isCorrect?: boolean;
-  result?: string;
-}
-
+import {JudgeData, GenerationData} from './type';
 
 /**
  * 1. AI 巩固出题

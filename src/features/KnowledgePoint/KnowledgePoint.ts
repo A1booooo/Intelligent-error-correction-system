@@ -9,10 +9,13 @@ import {
   saveNote,
   renamePoint,
   addSonPoint,
+} from '@/services/apis/KnowledgePointApi/KnowledgePointApi';
+
+import {   
   KnowledgePointNode,
   RelatedData,
   KnowledgeTooltip,
-} from '@/services/apis/KnowledgePointApi';
+} from '@/services/apis/KnowledgePointApi/type';
 
 export const useKnowledgePage = () => {
   const [rootPoints, setRootPoints] = useState<KnowledgePointNode[]>([]);

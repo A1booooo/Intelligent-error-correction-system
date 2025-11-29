@@ -1,107 +1,146 @@
 import { useState, useEffect } from 'react';
-import { KnowledgePointNode } from '@/services/apis/KnowledgePointApi';
-
-interface MockDataStats {
-  count: number;
-  reason: string;
-  review: number;
-}
-
-interface MockDataDetail {
-  title: string;
-  desc: string;
-  note: string;
-  questions: number[]; 
-  stats: MockDataStats;
-}
-
-const MOCK_DB: Record<number, MockDataDetail> = {
-  101: {
-    title: '函数概念',
-    desc: '函数（function）的定义：给定一个数集A...',
-    note: '重点在于理解定义域和值域的关系。',
-    questions: [10001, 10002], 
-    stats: { count: 4, reason: '概念模糊', review: 2 }
-  },
-  201: {
-    title: '一次函数',
-    desc: '一次函数是函数中的一种，一般形如 y=kx+b...',
-    note: 'k>0, y随x增大而增大...',
-    questions: [20001, 20002],
-    stats: { count: 2, reason: '计算错误', review: 5 }
-  },
-  202: {
-    title: '二次函数',
-    desc: '二次函数最高次必须为二次...',
-    note: '记忆顶点坐标公式...',
-    questions: [30001],
-    stats: { count: 3, reason: '公式记错', review: 1 }
-  },
-  203: {
-    title: '反比例函数',
-    desc: '反比例函数形如 y=k/x...',
-    note: '注意自变量 x 不能为 0。',
-    questions: [40001],
-    stats: { count: 1, reason: '审题不清', review: 0 }
-  }
-};
+import {
+  fetchDefinition,
+  fetchRelatedQuestionsOrNote,
+  fetchRelatedPoints,
+  fetchTooltip,
+  markAsMastered,
+  saveNote,
+  renamePoint,
+  addSonPoint,
+} from '@/services/apis/KnowledgePointApi/KnowledgePointApi'; 
+import {   
+  KnowledgePointNode,
+  RelatedData,
+  KnowledgeTooltip, } from '@/services/apis/KnowledgePointApi/type';
 
 export const useKnowledgePage = () => {
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [activeTitle, setActiveTitle] = useState<string>('');
+  const [activeTitle, setActiveTitle] = useState('');
   
-  const [description, setDescription] = useState<string>('');
-  const [noteInput, setNoteInput] = useState<string>('');
-  
-  const [viewStats, setViewStats] = useState<MockDataStats | null>(null);
+  // 详情数据
+  const [description, setDescription] = useState('');
+  const [isMastered, setIsMastered] = useState(false);
+  const [relatedData, setRelatedData] = useState<RelatedData | null>(null);
+  const [mistakeIds, setMistakeIds] = useState<number[]>([]); 
   const [relatedPoints, setRelatedPoints] = useState<KnowledgePointNode[]>([]);
+  const [stats, setStats] = useState<KnowledgeTooltip | null>(null);
   
-  // 当前关联的错题 IDs
-  const [mistakeIds, setMistakeIds] = useState<number[]>([]);
+  const [noteInput, setNoteInput] = useState('');
 
+  const [refreshTreeTrigger, setRefreshTreeTrigger] = useState(0);
+
+  // 当 activeId 变化时，并发请求所有详情数据
   useEffect(() => {
     if (!activeId) return;
 
-    const data = MOCK_DB[activeId];
+    setDescription('加载中...');
+    setIsMastered(false);
+    setRelatedData(null);
+    setMistakeIds([]);
+    setRelatedPoints([]);
+    setStats(null);
+    setNoteInput('');
 
-    if (data) {
-      setActiveTitle(data.title);
-      setDescription(data.desc);
-      setNoteInput(data.note);
-      setViewStats(data.stats);
-      setMistakeIds(data.questions); // 设置错题 ID
+    // 1. 获取定义 & 掌握状态 & 标题 
+    fetchDefinition(activeId).then((res) => {
+      if (res.code === 200 && res.data) {
+        setDescription(res.data.content || '暂无详细描述');
+        setIsMastered(!!res.data.isMastered);
+        
+        // 如果后端返回了 keyPoints (知识点名称)，同步更新标题
+        // 使用类型断言或可选链确保安全
+        if (res.data['keyPoints']) {
+            setActiveTitle(res.data['keyPoints'] as string);
+        }
+      } else {
+        setDescription('暂无详细描述');
+      }
+    }).catch(err => {
+      console.error("获取定义失败", err);
+      setDescription('加载失败');
+    });
 
-      const mockRelated: KnowledgePointNode[] = [
-        { id: 301, keyPoints: '映射', hasChildren: true},
-        { id: 302, keyPoints: '定义域', hasChildren: true },
-        { id: 303, keyPoints: '值域', hasChildren: true },
-      ];
-      setRelatedPoints(mockRelated);
-    } else {
-      setActiveTitle('未知知识点');
-      setDescription('暂无描述');
-      setNoteInput('');
-      setViewStats({ count: 0, reason: '无', review: 0 });
-      setMistakeIds([]);
-      setRelatedPoints([]);
-    }
+    // 2. 获取相关错题和笔记
+    fetchRelatedQuestionsOrNote(activeId).then((res) => {
+      if (res.code === 200 && res.data) {
+        setRelatedData(res.data);
+        setNoteInput(res.data.note || '');
+        if (res.data.questions) {
+          setMistakeIds(res.data.questions.map(q => q.id));
+        }
+      }
+    });
+
+    // 3. 获取相关知识点
+    fetchRelatedPoints(activeId).then((res) => {
+      if (res.code === 200 && res.data) setRelatedPoints(res.data);
+    });
+
+    // 4. 获取统计数据
+    fetchTooltip(activeId).then((res) => {
+      if (res.code === 200 && res.data) setStats(res.data);
+    });
 
   }, [activeId]);
 
-  const handleSaveNote = () => {
-    console.log(`保存 [${activeTitle}] 的笔记:`, noteInput);
+  // --- 交互操作 ---
+
+  const handleMarkMastered = async () => {
+    if (!activeId) return;
+    const res = await markAsMastered(activeId);
+    if (res.code === 200) {
+      setIsMastered(true);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!activeId) return;
+    await saveNote(activeId, noteInput);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!activeId || !newName.trim()) return;
+    const res = await renamePoint(activeId, newName);
+    if (res.code === 200) {
+      setActiveTitle(newName);
+      setRefreshTreeTrigger((p) => p + 1); 
+    }
+  };
+
+  const handleAddChild = async (name: string, desc: string) => {
+    if (!activeId || !name.trim()) return false;
+    const res = await addSonPoint(activeId, {
+      pointName: name,
+      pointDesc: desc,
+    });
+    if (res.code === 200) {
+      setRefreshTreeTrigger((p) => p + 1);
+      return true;
+    }
+    return false;
   };
 
   return {
     activeId,
     setActiveId,
     activeTitle,
+    setActiveTitle, 
     description,
-    viewStats,
+    isMastered,
+    stats,
     relatedPoints,
+    relatedData,
+    mistakeIds,
+    
     noteInput,
     setNoteInput,
+    
+    handleMarkMastered,
     handleSaveNote,
-    mistakeIds 
+    handleRename,
+    handleAddChild,
+    
+    refreshTreeTrigger
   };
 };

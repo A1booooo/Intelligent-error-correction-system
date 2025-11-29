@@ -1,25 +1,13 @@
 import request from '@/utils/request';
-
+import {StreamResponse, SolveStreamOptions} from './type';
 const API_VERSION = 'v1';
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
-export interface StreamResponse {
-  content?: string;
-  text?: string;
-  done?: boolean;
-  [key: string]: any;
-}
 
-export interface SolveStreamOptions {
-  question: string;
-  onMessage: (text: string) => void;
-  onError: (err: any) => void;
-  signal?: AbortSignal;
-}
 
 /**
  * 1. AI流式解题接口
- * 原生fetch AccessToken 过期，它会直接失败。
+ * 原生fetch --- AccessToken 过期，它会直接失败。
  */
 export const solveStream = async ({
   question,

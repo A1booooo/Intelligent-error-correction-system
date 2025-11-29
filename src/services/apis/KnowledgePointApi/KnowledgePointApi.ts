@@ -1,47 +1,13 @@
 import request from '@/utils/request';
-
+import {KnowledgePointNode,
+  KnowledgeTooltip,
+  // QuestionItem,
+  RelatedData,
+  AddSonPointParams,
+  KnowledgeDefinition,
+  KnowledgeStatistic,
+} from './type';
 const API_VERSION = 'v1';
-
-export interface KnowledgePointNode {
-  id: number;
-  keyPoints: string;
-  hasChildren?: boolean;
-}
-
-export interface KnowledgeTooltip {
-  degreeOfProficiency: number;
-  count: number;
-  lastReviewTime: string;
-}
-
-export interface QuestionItem {
-  id: number;
-  content: string;
-}
-
-export interface RelatedData {
-  questions: QuestionItem[];
-  note: string | null;
-}
-
-export interface AddSonPointParams {
-  pointName: string;
-  pointDesc?: string;
-  sonPoints?: AddSonPointParams[];
-}
-
-export interface KnowledgeDefinition {
-  content?: string;
-  isMastered?: boolean;
-  [key: string]: unknown;
-}
-
-export interface KnowledgeStatistic {
-  totalCount?: number;
-  wrongCount?: number;
-  solvedCount?: number;
-  [key: string]: number | undefined;
-}
 
 
 //  1. 获取根知识点
@@ -116,7 +82,7 @@ export const saveNote = (knowledgeId: number, content: string) => {
   return request.post<void>({
     url: `/api/${API_VERSION}/keypoints_explanation/${knowledgeId}/notes`,
     data: content,
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'application/json' },
   });
 };
 
@@ -126,7 +92,7 @@ export const renamePoint = (knowledgeId: number, newName: string) => {
   return request.post<void>({
     url: `/api/${API_VERSION}/keypoints_explanation/${knowledgeId}/rename`,
     data: newName,
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'application/json' },
   });
 };
 
