@@ -33,7 +33,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { AnalysisData } from '@/utils/type';
+import { AnalysisData } from '@/services/myQuestion/type';
 
 interface QuestionBackendItem {
   id: number;
@@ -204,7 +204,7 @@ export default function MyQuestionPage() {
   };
 
   const handleDelete = () => {
-    deleteQuestion(selectedQuestions).then((res: ApiResponse) => {
+    deleteQuestion(selectedQuestions).then((res) => {
       console.log(res);
     });
   };

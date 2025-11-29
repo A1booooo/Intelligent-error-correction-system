@@ -22,7 +22,9 @@ import {
   GetKeyPoint,
 } from '@/services/home/home';
 import { getStatistics } from '@/services/myQuestion/myQuestion';
-import { OverviewResponse, AnalysisData, ChartData } from '@/utils/type';
+import { ChartData } from '@/utils/type';
+import { OverviewResponse } from '@/services/home/type';
+import { AnalysisData } from '../../services/myQuestion/type';
 
 export default function Home() {
   const navigate = useNavigate();

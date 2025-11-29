@@ -17,7 +17,7 @@ let isRefreshing = false;
 let requestsQueue: Array<(token: string) => void> = [];
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BASE_AXIOS_URL || '',
+  baseURL: import.meta.env.VITE_BASE_URL || '',
   timeout: 8000,
 });
 
@@ -73,57 +73,33 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     removeRequest(response.config);
-    if (response.data?.code === 401) {
-      const error = new AxiosError(
-        'Token expired',
-        '401',
-        response.config,
-        null,
-        { status: 401 } as AxiosResponse,
-      );
-      return Promise.reject(error);
-    }
-
-    if (response.data?.code === -500) {
-      const error = new AxiosError(
-        'Server error',
-        '-500',
-        response.config,
-        null,
-        { status: 500 } as AxiosResponse,
-      );
-      return Promise.reject(error);
-    }
-
     return response.data;
   },
-  async (error: AxiosError) => {
-    console.log(error.response?.status);
+  async (error) => {
+    console.log('捕获到错误 status:', error.response?.status);
+
     const config = error.config as InternalAxiosRequestConfig;
 
-    if (config) {
-      removeRequest(config);
-    }
+    if (config) removeRequest(config);
 
+    // 这里用 401
     if (
-      error.response?.status === 500 &&
+      error.response?.status === 401 &&
       config &&
       config.url !== REFRESH_URL
     ) {
-      // Token 过期，尝试刷新
       if (isRefreshing) {
         console.log('Token 刷新中，等待重试');
         return new Promise((resolve) => {
           requestsQueue.push((newToken) => {
-            if (config.headers) {
-              config.headers['access-token'] = newToken;
-            }
-            resolve(axiosInstance(config)); // 重新发起请求
+            if (config.headers) config.headers['access-token'] = newToken;
+            resolve(axiosInstance(config));
           });
         });
       }
 
       isRefreshing = true;
+
       try {
         const newToken = await getRefreshToken();
 
@@ -138,11 +114,11 @@ axiosInstance.interceptors.response.use(
         } else {
           throw new Error('刷新失败');
         }
-      } catch (error) {
+      } catch (e) {
         requestsQueue = [];
         localStorage.clear();
         window.location.href = '/login';
-        return Promise.reject(error);
+        return Promise.reject(e);
       } finally {
         isRefreshing = false;
       }
@@ -153,7 +129,7 @@ axiosInstance.interceptors.response.use(
 );
 
 export const service = {
-  request: <T = unknown>(config: AxiosRequestConfig): Promise<IResponse<T>> => {
+  request: <T = unknown>(config: AxiosRequestConfig): Promise<T> => {
     return axiosInstance.request(config);
   },
   cancelRequest,

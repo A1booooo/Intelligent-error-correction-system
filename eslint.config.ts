@@ -27,6 +27,8 @@ export default defineConfig([
     },
     rules: {
       'react/react-in-jsx-scope': 'off', // 关闭该规则，因为使用了新的 JSX 转换
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
   prettierConfig,

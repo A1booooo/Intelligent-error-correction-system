@@ -14,16 +14,21 @@ import { StopCircle, Loader2 } from 'lucide-react';
 import { useStreamingAI } from '@/hooks/useStreamingAI';
 import { AiChatPanel } from '@/components/business/AiChatPanel';
 import { useEffect } from 'react';
+import { solveStream } from '../../services/apis/aiapi';
+import {
+  toggleErrorReason,
+  updateOtherReason,
+} from '../../services/errorReason/errorReason';
 
 export default function QuestionDetailPage() {
   const { result } = useLocation().state;
-  const [originalQuestion] = useState(result);
+  console.log(result);
+  const [originalQuestion] = useState(result.data.questionText);
   console.log(originalQuestion);
 
   const {
     content: aiSolution,
     isLoading: isAILoading,
-    streamAIResponse,
     stopStreaming,
   } = useStreamingAI({
     url: '/api/ai/solve-question', // 替换为实际API地址
@@ -39,11 +44,11 @@ export default function QuestionDetailPage() {
   const [otherReasonDetail, setOtherReasonDetail] = useState('');
 
   const errorReasonsList = [
-    { id: 'careless', label: '粗心马虎', color: 'bg-primary' },
-    { id: 'knowledgeGap', label: '知识点不熟悉', color: 'bg-primary' },
-    { id: 'calculationError', label: '计算错误', color: 'bg-primary' },
-    { id: 'timeShortage', label: '时间不够', color: 'bg-primary' },
-    { id: 'other', label: '其他', color: 'bg-primary' },
+    { id: 'isCareless', label: '粗心马虎', color: 'bg-primary' },
+    { id: 'isUnfamiliar', label: '知识点不熟悉', color: 'bg-primary' },
+    { id: 'isCalculateErr', label: '计算错误', color: 'bg-primary' },
+    { id: 'isTimeShortage', label: '时间不够', color: 'bg-primary' },
+    { id: 'otherReason', label: '其他', color: 'bg-primary' },
   ];
 
   /* const quickQuestions = [
@@ -52,50 +57,60 @@ export default function QuestionDetailPage() {
     '有哪一个考察重点和解析？',
   ]; */
 
-  // 提交题目获取AI解答
-  const handleGetAISolution = async () => {
-    if (!originalQuestion.trim()) {
-      alert('请先输入题目内容');
-      return;
-    }
+  const handleSelectReason = (reason: string) => {
+    setSelectedReason(reason);
 
-    await streamAIResponse(originalQuestion);
+    toggleErrorReason({
+      questionId: result.data.questionId,
+      reasonName: reason,
+    }).then((res) => console.log('选中错因：', res));
   };
 
-  useEffect(() => {
-    if (originalQuestion) {
-      streamAIResponse(originalQuestion);
-    }
-  }, []);
+  const handleOtherReasonBlur = () => {
+    if (!otherReasonDetail.trim()) return;
+
+    updateOtherReason({
+      questionId: result.data.questionId,
+      otherReasonText: otherReasonDetail.trim(),
+    }).then((res) => console.log('其他原因提交：', res));
+  };
+  // 组件卸载时处理其他原因提交
+  /* useEffect(() => {
+    return () => {
+      if (!selectedReason) {
+        return;
+      } else if (selectedReason === 'otherReason' && otherReasonDetail.trim()) {
+        updateOtherReason({
+          questionId: result.data.questionId,
+          otherReasonText: otherReasonDetail.trim(),
+        }).then((res) => {
+          console.log(res);
+        });
+      } else {
+        toggleErrorReason({
+          questionId: result.data.questionId,
+          reasonName: selectedReason,
+        }).then((res) => {
+          console.log(res);
+        });
+      }
+    };
+  }, [selectedReason]); */
 
   return (
     <div className="bg-background p-6 h-[93svh] overflow-hidden">
       {/* 主内容区 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
         {/* 左侧区域 - 原题和AI题解 */}
-        <div className="lg:col-span-5 grid grid-rows-[auto_auto_0.5fr] gap-4">
+        <div className="lg:col-span-5 grid grid-rows-[auto_auto_0fr] gap-4">
           {/* 原题卡片 */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg">原题</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-y-auto min-h-[200px]"></CardContent>
-            <CardFooter>
-              <Button
-                onClick={handleGetAISolution}
-                disabled={isAILoading || !originalQuestion.trim()}
-                className="w-full"
-              >
-                {isAILoading ? (
-                  <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                    生成中...
-                  </>
-                ) : (
-                  '获取AI解答'
-                )}
-              </Button>
-            </CardFooter>
+            <CardContent className="overflow-y-auto min-h-[200px]">
+              {originalQuestion}
+            </CardContent>
           </Card>
 
           {/* AI题解卡片 */}
@@ -137,10 +152,13 @@ export default function QuestionDetailPage() {
             <CardContent className="flex items-center justify-between p-4">
               <span className="text-foreground font-medium">你看懂了吗？</span>
               <div className="flex gap-3">
-                <Button variant="default" className="shadow-md">
+                <Button variant="default" className="shadow-md cursor-pointer">
                   看懂了 😊
                 </Button>
-                <Button variant="secondary" className="shadow-md">
+                <Button
+                  variant="secondary"
+                  className="shadow-md cursor-pointer"
+                >
                   没看懂 😢
                 </Button>
               </div>
@@ -161,7 +179,7 @@ export default function QuestionDetailPage() {
                   <div key={reason.id} className="flex flex-col gap-2">
                     <div
                       className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => setSelectedReason(reason.id)}
+                      onClick={() => handleSelectReason(reason.id)}
                     >
                       <div className={`size-2 rounded-full ${reason.color}`} />
                       <label className="flex flex-1 items-center gap-2 cursor-pointer">
@@ -173,17 +191,18 @@ export default function QuestionDetailPage() {
                         placeholder="请输入具体的错误原因..."
                         value={otherReasonDetail}
                         onChange={(e) => setOtherReasonDetail(e.target.value)}
-                        className={`w-[73%] h-[45px] absolute left-17 transition-opacity duration-300 ${reason.id === 'other' && selectedReason === 'other' ? 'opacity-100' : 'opacity-0'}`}
+                        className={`w-[73%] h-[45px] absolute left-17 transition-opacity duration-300 ${reason.id === 'otherReason' && selectedReason === 'otherReason' ? 'opacity-100' : 'opacity-0'} z-0`}
+                        onBlur={handleOtherReasonBlur}
                       />
                       <div
-                        className={`flex size-4 items-center justify-center rounded-full border border-primary ${
+                        className={`flex size-4 items-center justify-center rounded-full border border-primary z-10 ${
                           selectedReason === reason.id
                             ? 'bg-primary text-primary-foreground duration-300'
                             : 'opacity-50 duration-300'
                         }`}
                       >
                         {selectedReason === reason.id && (
-                          <div className="size-2 rounded-full bg-current" />
+                          <div className="size-2 rounded-full bg-current z-10" />
                         )}
                       </div>
                     </div>

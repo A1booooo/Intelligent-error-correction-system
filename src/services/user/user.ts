@@ -1,5 +1,5 @@
 import request from '../../utils/request';
-import { UserResponse } from '../../utils/type';
+import { UserResponse } from './type';
 
 export function Login(data: object) {
   return request.post<UserResponse>({ url: '/api/userAccount/login', data });

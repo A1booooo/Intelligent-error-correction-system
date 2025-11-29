@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import {
   CloudUpload,
   PencilLine,
@@ -36,10 +37,13 @@ export default function UploadQuestionPage() {
     try {
       const res = await extractFirst(selectedFile, fileType);
       console.log(res);
-      navigate('/upload-question/question-detail', {
-        state: { result: res },
-      });
+      if (res.code === 200) {
+        navigate('/upload-question/question-detail', {
+          state: { result: res },
+        });
+      }
     } catch (err) {
+      toast.error('上传失败，请稍后重试');
       console.error(err);
     }
   };

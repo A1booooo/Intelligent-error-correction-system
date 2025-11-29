@@ -18,6 +18,7 @@ export function SignupForm({
   ...props
 }: React.ComponentProps<'form'>) {
   const [formData, setFormData] = useState({
+    userName: '',
     userAccount: '',
     checkCode: '',
     userPassword: '',
@@ -67,12 +68,15 @@ export function SignupForm({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!formData.userName) {
+      newErrors.userName = '请输入用户名';
+    }
     if (!formData.userAccount) {
-      newErrors.email = '请输入邮箱地址';
+      newErrors.userAccount = '请输入邮箱地址';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.userAccount)) {
-        newErrors.email = '请输入有效的邮箱地址';
+        newErrors.userAccount = '请输入有效的邮箱地址';
       }
     }
     if (!formData.checkCode) {
@@ -122,6 +126,22 @@ export function SignupForm({
             填写以下信息以创建您的账户
           </p>
         </div>
+        <Field>
+          <FieldLabel htmlFor="userAccount">用户名</FieldLabel>
+          <Input
+            id="name"
+            type="text"
+            placeholder="请输入用户名"
+            value={formData.userName}
+            onChange={handleChange}
+            className={errors.name ? 'border-red-500' : ''}
+          />
+          {errors.name && (
+            <FieldDescription className="text-red-500 text-xs">
+              {errors.name}
+            </FieldDescription>
+          )}
+        </Field>
         <Field>
           <FieldLabel htmlFor="userAccount">邮箱</FieldLabel>
           <Input
