@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     user: {
       name: user.userName,
       email: user.userAccount,
-      avatar: localStorage.getItem('avatar') || '',
+      avatar: user.avatar || '',
     },
     navMain: [
       {

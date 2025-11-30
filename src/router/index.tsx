@@ -12,6 +12,7 @@ import MyQuestionPage from '@/features/MyQuestion/MyQuestion';
 import ForgotPasswordPage from '../auth/ForgotPassword/ForgotPassword';
 import SignupPage from '@/auth/Signup/Signup';
 import LoginPage from '@/auth/Login/Login';
+import NotFound from '@/components/common/NotFound';
 
 function Router() {
   return (
@@ -36,6 +37,8 @@ function Router() {
             {/* <Route path="practice" element={<PracticePage />} /> */}
           </Route>
         </Route>
+        {/* 根级404路由 - 匹配所有其他未定义的路径 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

@@ -45,6 +45,7 @@ export function LoginForm({
             userId: res.data.userId,
             userName: res.data.userName,
             userAccount: formData.userAccount,
+            avatar: '',
           });
           localStorage.setItem('access-token', res.data.accessToken);
           localStorage.setItem('refresh-token', res.data.refreshToken);

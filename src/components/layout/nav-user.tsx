@@ -84,7 +84,12 @@ export function NavUser({
               className="cursor-pointer transition-all duration-200"
               onClick={() => {
                 Logout().then(() => {
-                  setUser({ userId: '', userName: '', userAccount: '' });
+                  setUser({
+                    userId: '',
+                    userName: '',
+                    userAccount: '',
+                    avatar: '',
+                  });
                   localStorage.removeItem('access-token');
                   localStorage.removeItem('refresh-token');
                   navigate('/login');
