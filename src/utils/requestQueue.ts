@@ -3,11 +3,12 @@ import axios, { AxiosRequestConfig, Canceler } from 'axios';
 const pendingMap = new Map<string, Canceler>();
 
 const getRequestKey = (config: AxiosRequestConfig) => {
+  const { method, url, params, data } = config;
   return [
-    config.method,
-    config.url,
-    JSON.stringify(config.params),
-    JSON.stringify(config.data),
+    method,
+    url,
+    params ? JSON.stringify(params) : '',
+    data ? JSON.stringify(data) : '',
   ].join('&');
 };
 

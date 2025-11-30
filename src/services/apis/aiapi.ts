@@ -27,21 +27,20 @@ export const solveStream = async ({
   onError,
   signal,
 }: SolveStreamOptions) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access-token');
 
   try {
     const endpoint = `${BASE_URL}/api/${API_VERSION}/solve/stream`;
-    const fullUrl = `${endpoint}?question=${encodeURIComponent(question)}`;
 
-    console.log('正在请求 AI 流式接口:', fullUrl);
+    console.log('正在请求 AI 流式接口:', endpoint);
 
-    const response = await fetch(fullUrl, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
+        'access-token': token || '',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ question }),
       signal,
     });
 

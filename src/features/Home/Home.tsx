@@ -53,12 +53,12 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const overview = await GetOverview();
-        setOverview(overview);
         console.log(overview);
+        setOverview(overview);
 
         const statistics = await getStatistics();
-        setStatistics(statistics);
         console.log(statistics);
+        setStatistics(statistics);
 
         const overdue = await GetOverDue();
         console.log(overdue);
@@ -67,13 +67,13 @@ export default function Home() {
         console.log(tricky);
 
         const keyPoint = await GetKeyPoint();
+        console.log(keyPoint);
         setKeyPoint(
           keyPoint as Array<{
             knowledgePoint: string;
             reviewReason: string;
           }>,
         );
-        console.log(keyPoint);
       } catch (error) {
         console.error('请求失败', error);
       }

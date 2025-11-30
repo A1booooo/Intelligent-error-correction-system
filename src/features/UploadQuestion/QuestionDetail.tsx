@@ -1,45 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { useLocation } from 'react-router-dom';
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { StopCircle, Loader2 } from 'lucide-react';
-import { useStreamingAI } from '@/hooks/useStreamingAI';
-import { AiChatPanel } from '@/components/business/AiChatPanel';
-import { useEffect } from 'react';
-import { solveStream } from '../../services/apis/aiapi';
+import { StopCircle } from 'lucide-react';
+import { solveStream } from '@/services/apis/aiapi';
 import {
   toggleErrorReason,
   updateOtherReason,
-} from '../../services/errorReason/errorReason';
+} from '@/services/errorReason/errorReason';
+import { AiChatPanel } from '@/components/business/AiChatPanel';
+import { recordQuestion } from '@/services/questionSetting/questionSetting';
 
 export default function QuestionDetailPage() {
   const { result } = useLocation().state;
-  console.log(result);
   const [originalQuestion] = useState(result.data.questionText);
-  console.log(originalQuestion);
 
-  const {
-    content: aiSolution,
-    isLoading: isAILoading,
-    stopStreaming,
-  } = useStreamingAI({
-    url: '/api/ai/solve-question', // 替换为实际API地址
-    onComplete: () => {
-      console.log('AI解答完成');
-    },
-    onError: (error) => {
-      console.error('AI解答错误:', error);
-    },
-  });
+  // AI 流式解答
+  const [aiSolution, setAiSolution] = useState('');
+  const [isAILoading, setIsAILoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 错因分析
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [otherReasonDetail, setOtherReasonDetail] = useState('');
 
@@ -51,15 +37,47 @@ export default function QuestionDetailPage() {
     { id: 'otherReason', label: '其他', color: 'bg-primary' },
   ];
 
-  /* const quickQuestions = [
-    '继续一种新题继续表达系统',
-    '请再做一种考试重点',
-    '有哪一个考察重点和解析？',
-  ]; */
+  // 请求 AI 流式解答
+  useEffect(() => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setIsAILoading(true);
+    setAiSolution('');
+
+    solveStream({
+      question: originalQuestion,
+      signal: controller.signal,
+      onMessage: (text) => setAiSolution((prev) => prev + text),
+      onError: (err) => {
+        if (err.name !== 'AbortError') console.error('AI解答错误:', err);
+        setIsAILoading(false);
+      },
+    }).finally(() => {
+      setIsAILoading(false);
+      recordQuestion(result.data.questionId).then((res) =>
+        console.log('记录题目：', res),
+      );
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, [originalQuestion]);
+
+  const stopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsAILoading(false);
+    }
+  };
 
   const handleSelectReason = (reason: string) => {
+    toggleErrorReason({
+      questionId: result.data.questionId,
+      reasonName: selectedReason,
+    });
     setSelectedReason(reason);
-
     toggleErrorReason({
       questionId: result.data.questionId,
       reasonName: reason,
@@ -68,54 +86,30 @@ export default function QuestionDetailPage() {
 
   const handleOtherReasonBlur = () => {
     if (!otherReasonDetail.trim()) return;
-
     updateOtherReason({
       questionId: result.data.questionId,
       otherReasonText: otherReasonDetail.trim(),
     }).then((res) => console.log('其他原因提交：', res));
   };
-  // 组件卸载时处理其他原因提交
-  /* useEffect(() => {
-    return () => {
-      if (!selectedReason) {
-        return;
-      } else if (selectedReason === 'otherReason' && otherReasonDetail.trim()) {
-        updateOtherReason({
-          questionId: result.data.questionId,
-          otherReasonText: otherReasonDetail.trim(),
-        }).then((res) => {
-          console.log(res);
-        });
-      } else {
-        toggleErrorReason({
-          questionId: result.data.questionId,
-          reasonName: selectedReason,
-        }).then((res) => {
-          console.log(res);
-        });
-      }
-    };
-  }, [selectedReason]); */
 
   return (
     <div className="bg-background p-6 h-[93svh] overflow-hidden">
-      {/* 主内容区 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
         {/* 左侧区域 - 原题和AI题解 */}
-        <div className="lg:col-span-5 grid grid-rows-[auto_auto_0fr] gap-4">
+        <div className="lg:col-span-5 grid grid-rows-[1fr_1fr_auto] gap-4 h-full overflow-hidden">
           {/* 原题卡片 */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg flex flex-col overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg">原题</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-y-auto min-h-[200px]">
+            <CardContent className="flex-1 overflow-y-auto min-h-0">
               {originalQuestion}
             </CardContent>
           </Card>
 
           {/* AI题解卡片 */}
-          <Card className="shadow-lg">
-            <CardHeader>
+          <Card className="shadow-lg flex flex-col overflow-hidden">
+            <CardHeader className="flex items-center justify-between flex-shrink-0">
               <CardTitle className="text-lg">AI题解</CardTitle>
               {isAILoading && (
                 <Button
@@ -129,10 +123,15 @@ export default function QuestionDetailPage() {
                 </Button>
               )}
             </CardHeader>
-            <CardContent className="overflow-y-auto">
+            <CardContent className="flex-1 overflow-y-auto min-h-0">
               {aiSolution ? (
                 <div className="whitespace-pre-wrap text-foreground">
-                  {aiSolution}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {aiSolution}
+                  </ReactMarkdown>
                   {isAILoading && (
                     <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
                   )}
@@ -146,19 +145,14 @@ export default function QuestionDetailPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* 理解确认区域 */}
           <Card className="shadow-lg">
             <CardContent className="flex items-center justify-between p-4">
-              <span className="text-foreground font-medium">你看懂了吗？</span>
+              <span>你看懂了吗？</span>
               <div className="flex gap-3">
-                <Button variant="default" className="shadow-md cursor-pointer">
+                <Button variant="default" className="cursor-pointer">
                   看懂了 😊
                 </Button>
-                <Button
-                  variant="secondary"
-                  className="shadow-md cursor-pointer"
-                >
+                <Button variant="secondary" className="cursor-pointer">
                   没看懂 😢
                 </Button>
               </div>
@@ -191,7 +185,12 @@ export default function QuestionDetailPage() {
                         placeholder="请输入具体的错误原因..."
                         value={otherReasonDetail}
                         onChange={(e) => setOtherReasonDetail(e.target.value)}
-                        className={`w-[73%] h-[45px] absolute left-17 transition-opacity duration-300 ${reason.id === 'otherReason' && selectedReason === 'otherReason' ? 'opacity-100' : 'opacity-0'} z-0`}
+                        className={`w-[73%] h-[45px] absolute left-17 transition-opacity duration-300 ${
+                          reason.id === 'otherReason' &&
+                          selectedReason === 'otherReason'
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        } z-0`}
                         onBlur={handleOtherReasonBlur}
                       />
                       <div
@@ -238,6 +237,7 @@ export default function QuestionDetailPage() {
           </Card>
         </div>
 
+        {/* 右侧 AI 聊天面板 */}
         <div className="lg:col-span-4 h-full overflow-hidden">
           <AiChatPanel
             mode="embedded"

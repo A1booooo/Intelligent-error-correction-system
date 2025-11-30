@@ -20,7 +20,12 @@ export function SendCode(userAccount: string) {
 }
 
 export function Logout() {
-  return request.post<UserResponse>({ url: '/api/userAccount/logout' });
+  return request.post<UserResponse>({
+    url: '/api/userAccount/logout',
+    headers: {
+      'refresh-token': localStorage.getItem('refreshToken') || '',
+    },
+  });
 }
 
 export function ResetPassword(data: {

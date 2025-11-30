@@ -1,7 +1,5 @@
 import { service } from './http';
-import type { CustomAxiosRequestConfig, IResponse } from './type';
-
-export type { IResponse };
+import type { CustomAxiosRequestConfig } from './type';
 
 export default {
   get: <T>(option: CustomAxiosRequestConfig) => {

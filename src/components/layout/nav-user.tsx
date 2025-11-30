@@ -92,6 +92,7 @@ export function NavUser({
                   });
                   localStorage.removeItem('access-token');
                   localStorage.removeItem('refresh-token');
+                  localStorage.removeItem('user');
                   navigate('/login');
                 });
               }}

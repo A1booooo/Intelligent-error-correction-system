@@ -67,12 +67,6 @@ interface QuestionListResponse {
   [key: string]: unknown;
 }
 
-interface ApiResponse {
-  code: number;
-  message?: string;
-  data?: unknown;
-}
-
 export default function MyQuestionPage() {
   const [subjectOpen, setSubjectOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
@@ -83,9 +77,6 @@ export default function MyQuestionPage() {
   const [searchParams, setSearchParams] = useSearchParams({
     page: '1' as string,
   });
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get('page')) || 1,
-  );
   const [filters, setFilters] = useState<Filters>({
     subjects: [],
     errorTypes: [],
@@ -140,6 +131,12 @@ export default function MyQuestionPage() {
     });
   };
 
+  // 初始化：从 URL 设置 filters
+  useEffect(() => {
+    const page = Number(searchParams.get('page')) || 1;
+    setFilters((prev) => ({ ...prev, page }));
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       const params = {
@@ -153,28 +150,22 @@ export default function MyQuestionPage() {
       try {
         const res = (await getQuestionList(params)) as QuestionListResponse;
 
-        // Check if res and res.content exist
-        if (res && res.content && Array.isArray(res.content)) {
-          const mapped = res.content.map((item: QuestionBackendItem) => ({
-            id: item.id,
-            subject: item.subject,
-            errorReason: mapErrorReason(item),
-            date: item.update_time,
-            content: item.question_content,
-          }));
-          setQuestionData(mapped);
-        } else {
-          console.warn('API response structure unexpected:', res);
-          setQuestionData([]);
+        if (res?.content) {
+          setQuestionData(
+            res.content.map((item: QuestionBackendItem) => ({
+              id: item.id,
+              subject: item.subject,
+              errorReason: mapErrorReason(item),
+              date: item.update_time,
+              content: item.question_content,
+            })),
+          );
         }
 
-        const statistics = await getStatistics();
-        if (statistics) {
-          setStatistics(statistics);
-        }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setQuestionData([]);
+        const stat = await getStatistics();
+        if (stat) setStatistics(stat);
+      } catch (e) {
+        console.error('fetch error', e);
       }
     };
 
@@ -182,25 +173,19 @@ export default function MyQuestionPage() {
   }, [filters]);
 
   useEffect(() => {
-    setSearchParams({ page: currentPage.toString() });
-    setFilters({ ...filters, page: currentPage });
-  }, [currentPage]);
-
-  useEffect(() => {
-    setCurrentPage(Number(searchParams.get('page')) || 1);
-    setFilters({ ...filters, page: Number(searchParams.get('page')) || 1 });
-  }, [searchParams]);
+    setSearchParams({ page: String(filters.page) });
+  }, [filters.page]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   const handleNext = () => {
-    setCurrentPage(currentPage + 1);
+    setFilters((prev) => ({ ...prev, page: prev.page + 1 }));
   };
 
   const handlePrevious = () => {
-    setCurrentPage(currentPage - 1);
+    setFilters((prev) => ({ ...prev, page: prev.page - 1 }));
   };
 
   const handleDelete = () => {
@@ -436,10 +421,10 @@ export default function MyQuestionPage() {
                 {new Array(3).fill(1).map((_, index) => (
                   <PaginationItem key={index}>
                     <PaginationLink
-                      className={` ${currentPage - 1 + index === currentPage ? 'bg-primary text-primary-foreground pointer-events-none' : 'cursor-pointer'} ${currentPage - 1 + index === 0 ? 'opacity-0 pointer-events-none' : ''}`}
-                      onClick={() => handlePageChange(currentPage - 1 + index)}
+                      className={` ${filters.page - 1 + index === filters.page ? 'bg-primary text-primary-foreground pointer-events-none' : 'cursor-pointer'} ${filters.page - 1 + index === 0 ? 'opacity-0 pointer-events-none' : ''}`}
+                      onClick={() => handlePageChange(filters.page - 1 + index)}
                     >
-                      {currentPage - 1 + index}
+                      {filters.page - 1 + index}
                     </PaginationLink>
                   </PaginationItem>
                 ))}
