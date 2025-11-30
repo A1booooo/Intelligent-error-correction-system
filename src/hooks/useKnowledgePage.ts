@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import {
   fetchDefinition,
   fetchRelatedQuestionsOrNote,
@@ -8,31 +9,31 @@ import {
   saveNote,
   renamePoint,
   addSonPoint,
-} from '@/services/apis/KnowledgePointApi/KnowledgePointApi'; 
-import {   
+} from '@/services/apis/KnowledgePointApi/KnowledgePointApi';
+
+import {
   KnowledgePointNode,
   RelatedData,
-  KnowledgeTooltip, } from '@/services/apis/KnowledgePointApi/type';
+  KnowledgeTooltip,
+} from '@/services/apis/KnowledgePointApi/type';
 
 export const useKnowledgePage = () => {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeTitle, setActiveTitle] = useState('');
   
-  // 详情数据
   const [description, setDescription] = useState('');
   const [isMastered, setIsMastered] = useState(false);
   const [relatedData, setRelatedData] = useState<RelatedData | null>(null);
-  const [mistakeIds, setMistakeIds] = useState<number[]>([]); 
+  const [mistakeIds, setMistakeIds] = useState<any[]>([]); 
   const [relatedPoints, setRelatedPoints] = useState<KnowledgePointNode[]>([]);
   const [stats, setStats] = useState<KnowledgeTooltip | null>(null);
-  
   const [noteInput, setNoteInput] = useState('');
 
   const [refreshTreeTrigger, setRefreshTreeTrigger] = useState(0);
 
-  // 当 activeId 变化时，并发请求所有详情数据
   useEffect(() => {
-    if (!activeId) return;
+    if (activeId === null) return;
+
 
     setDescription('加载中...');
     setIsMastered(false);
@@ -42,26 +43,32 @@ export const useKnowledgePage = () => {
     setStats(null);
     setNoteInput('');
 
-    // 1. 获取定义 & 掌握状态 & 标题 
-    fetchDefinition(activeId).then((res) => {
-      if (res.code === 200 && res.data) {
-        setDescription(res.data.content || '暂无详细描述');
-        setIsMastered(!!res.data.isMastered);
-        
-        // 如果后端返回了 keyPoints (知识点名称)，同步更新标题
-        // 使用类型断言或可选链确保安全
-        if (res.data['keyPoints']) {
-            setActiveTitle(res.data['keyPoints'] as string);
-        }
-      } else {
-        setDescription('暂无详细描述');
-      }
-    }).catch(err => {
-      console.error("获取定义失败", err);
-      setDescription('加载失败');
-    });
+    // 2. 调用 fetchDefinition 获取定义和掌握状态
+    const loadDefinition = async () => {
+      try {
+        const res = await fetchDefinition(activeId);
+        if (res.code === 200 && res.data) {
+          // 渲染描述
+          setDescription(res.data.content || '暂无详细描述');
+          
+          // 渲染掌握状态 (奖章是否变黄)
+          setIsMastered(!!res.data.isMastered);
 
-    // 2. 获取相关错题和笔记
+          // 如果后端返回了标题，同步更新标题 (可选)
+          if (res.data.keyPoints) {
+            setActiveTitle(res.data.keyPoints);
+          }
+        } else {
+          setDescription('暂无详细描述');
+        }
+      } catch (e) {
+        console.error("获取定义失败", e);
+        setDescription('加载失败');
+      }
+    };
+    loadDefinition();
+
+    // 3. 并发获取其他数据 (错题、统计、关联等) - 保持原样
     fetchRelatedQuestionsOrNote(activeId).then((res) => {
       if (res.code === 200 && res.data) {
         setRelatedData(res.data);
@@ -72,75 +79,74 @@ export const useKnowledgePage = () => {
       }
     });
 
-    // 3. 获取相关知识点
     fetchRelatedPoints(activeId).then((res) => {
       if (res.code === 200 && res.data) setRelatedPoints(res.data);
     });
 
-    // 4. 获取统计数据
     fetchTooltip(activeId).then((res) => {
       if (res.code === 200 && res.data) setStats(res.data);
     });
 
   }, [activeId]);
 
-  // --- 交互操作 ---
-
+  // --- 交互逻辑保持不变 ---
   const handleMarkMastered = async () => {
     if (!activeId) return;
-    const res = await markAsMastered(activeId);
-    if (res.code === 200) {
-      setIsMastered(true);
+    try {
+      const res = await markAsMastered(activeId);
+      if (res.code === 200) setIsMastered(true);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   const handleSaveNote = async () => {
     if (!activeId) return;
-    await saveNote(activeId, noteInput);
+    try { await saveNote(activeId, noteInput); } catch (e) { console.error(e); }
   };
 
   const handleRename = async (newName: string) => {
     if (!activeId || !newName.trim()) return;
-    const res = await renamePoint(activeId, newName);
-    if (res.code === 200) {
-      setActiveTitle(newName);
-      setRefreshTreeTrigger((p) => p + 1); 
-    }
+    try {
+      const res = await renamePoint(activeId, newName);
+      if (res.code === 200) {
+        setActiveTitle(newName);
+        setRefreshTreeTrigger(prev => prev + 1);
+      }
+    } catch (e) { console.error(e); }
   };
 
   const handleAddChild = async (name: string, desc: string) => {
     if (!activeId || !name.trim()) return false;
-    const res = await addSonPoint(activeId, {
-      pointName: name,
-      pointDesc: desc,
-    });
-    if (res.code === 200) {
-      setRefreshTreeTrigger((p) => p + 1);
-      return true;
-    }
+    try {
+      const res = await addSonPoint(activeId, { pointName: name, pointDesc: desc, sonPoints: [], pointId: null });
+      if (res && res.code === 200) {
+        setRefreshTreeTrigger(prev => prev + 1);
+        return true;
+      }
+    } catch (e) { console.error(e); }
     return false;
   };
+
+
 
   return {
     activeId,
     setActiveId,
     activeTitle,
-    setActiveTitle, 
+    setActiveTitle,
     description,
     isMastered,
     stats,
     relatedPoints,
     relatedData,
     mistakeIds,
-    
     noteInput,
     setNoteInput,
-    
     handleMarkMastered,
     handleSaveNote,
     handleRename,
     handleAddChild,
-    
     refreshTreeTrigger
   };
 };

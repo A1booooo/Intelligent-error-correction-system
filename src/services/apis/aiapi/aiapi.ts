@@ -1,9 +1,87 @@
 import request from '@/utils/request';
-import {StreamResponse, SolveStreamOptions} from './type';
+import { StreamResponse, SolveStreamOptions } from './type';
 const API_VERSION = 'v1';
-const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
 
+class SectionFormatter {
+  private buffer: string = '';
+
+
+  processChunk(chunk: string): string {
+    this.buffer += chunk;
+
+
+    let result = '';
+
+    const sectionPattern = /【([^】]+)】/g;
+    const matches: Array<{ start: number; end: number; text: string }> = [];
+    let match;
+
+    while ((match = sectionPattern.exec(this.buffer)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[0],
+      });
+    }
+
+    if (matches.length === 0) {
+      const incompleteIndex = this.buffer.lastIndexOf('【');
+      if (incompleteIndex !== -1) {
+        const afterBracket = this.buffer.substring(incompleteIndex);
+        if (!afterBracket.includes('】')) {
+          result = this.buffer.substring(0, incompleteIndex);
+          this.buffer = this.buffer.substring(incompleteIndex);
+          return result;
+        }
+      }
+      result = this.buffer;
+      this.buffer = '';
+
+      return result;
+    }
+
+    let lastIndex = 0;
+    for (const sectionMatch of matches) {
+      if (sectionMatch.start > lastIndex) {
+        result += this.buffer.substring(lastIndex, sectionMatch.start);
+      }
+
+      result += `\n\n${sectionMatch.text}\n\n`;
+
+      lastIndex = sectionMatch.end;
+    }
+
+    const remaining = this.buffer.substring(lastIndex);
+
+    const incompleteIndex = remaining.lastIndexOf('【');
+    if (incompleteIndex !== -1) {
+      const afterBracket = remaining.substring(incompleteIndex);
+      if (!afterBracket.includes('】')) {
+        result += remaining.substring(0, incompleteIndex);
+        this.buffer = remaining.substring(incompleteIndex);
+        return result;
+      }
+    }
+
+    result += remaining;
+    this.buffer = '';
+    return result;
+  }
+
+
+  flush(): string {
+    const remaining = this.buffer;
+
+    this.buffer = '';
+    return remaining;
+  }
+}
+
+
+const removeDollarSigns = (text: string): string => {
+  return text.replace(/\$/g, '');
+};
 
 /**
  * 1. AI流式解题接口
@@ -15,26 +93,41 @@ export const solveStream = async ({
   onError,
   signal,
 }: SolveStreamOptions) => {
-  const token = localStorage.getItem('token');
+  let token = localStorage.getItem('token');
+
+  if (token) {
+    token = token.replace(/^"|"$/g, '');
+  }
+
+  const formatter = new SectionFormatter();
+
+  const sendMessage = (content: string) => {
+    const cleanedContent = removeDollarSigns(content);
+    if (cleanedContent) {
+      onMessage(cleanedContent);
+    }
+  };
 
   try {
-    const endpoint = `${BASE_URL}/api/${API_VERSION}/solve/stream`;
-    const fullUrl = `${endpoint}?question=${encodeURIComponent(question)}`;
+    const endpoint = `/api/${API_VERSION}/solve/stream`;
 
-    console.log('正在请求 AI 流式接口:', fullUrl);
 
-    const response = await fetch(fullUrl, {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['access-token'] = token;
+    }
+
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '', 
-      },
-      body: JSON.stringify({}),
+      headers,
+      body: JSON.stringify({ question }),
       signal,
     });
 
     if (!response.ok) {
-      // 如果是 401，这里其实无法触发无感刷新，因为没走 axios
       const errorText = await response.text();
       throw new Error(`HTTP error! status: ${response.status}, msg: ${errorText}`);
     }
@@ -45,10 +138,75 @@ export const solveStream = async ({
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
 
+    const processSSELine = (line: string) => {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith('data:')) {
+        return;
+      }
+
+      const dataStr = trimmed.slice(5).trim();
+
+
+      if (dataStr === '[DONE]') {
+        return true; // 标记流结束
+      }
+
+      if (!dataStr) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(dataStr);
+        let content = '';
+        if (typeof parsed === 'object' && parsed !== null) {
+          content = (parsed as StreamResponse).content || (parsed as StreamResponse).text || '';
+        } else {
+          content = dataStr;
+        }
+
+
+
+        if (content) {
+          const formatted = formatter.processChunk(content);
+          if (formatted) {
+            sendMessage(formatted);
+          }
+        } else {
+        }
+      } catch (_e) {
+        const formatted = formatter.processChunk(dataStr);
+
+        if (formatted) {
+          sendMessage(formatted);
+        } else {
+        }
+      }
+      return false;
+    };
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value, done } = await reader.read();
-      if (done) break;
+
+      if (done) {
+
+
+        if (buffer.trim()) {
+          const lines = buffer.split(/\r?\n/);
+          for (const line of lines) {
+            if (line.trim()) {
+              processSSELine(line);
+            }
+          }
+        } else {
+        }
+
+        const remaining = formatter.flush();
+        if (remaining) {
+          sendMessage(remaining);
+        }
+        break;
+      }
 
       const chunk = decoder.decode(value, { stream: true });
       buffer += chunk;
@@ -57,21 +215,13 @@ export const solveStream = async ({
       buffer = lines.pop() || '';
 
       for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith('data:')) continue;
-
-        const dataStr = trimmed.slice(5).trim();
-
-        if (dataStr === '[DONE]') return;
-
-        try {
-          const data: StreamResponse = JSON.parse(dataStr);
-          const content = data.content || data.text || '';
-          if (content) onMessage(content);
-        } catch (_e) {
-          //JSON / 普通文本
-          console.warn('Non-JSON SSE data:', dataStr);
-          onMessage(dataStr);
+        const isDone = processSSELine(line);
+        if (isDone) {
+          const remaining = formatter.flush();
+          if (remaining) {
+            sendMessage(remaining);
+          }
+          return;
         }
       }
     }

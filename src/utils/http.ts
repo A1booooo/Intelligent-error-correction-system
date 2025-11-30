@@ -24,17 +24,17 @@ const getRefreshToken = async (): Promise<string | null> => {
 
     const { data } = await axios.post(
       `${import.meta.env.VITE_BASE_AXIOS_URL}${REFRESH_URL}`,
-      {}, 
+      {},
       {
         headers: {
-          'refresh-token': refreshToken, 
+          'refresh-token': refreshToken,
         },
       }
     );
 
     if (data.code === 200 && data.data) {
       const { newAccessToken, newRefreshToken } = data.data;
-      
+
       localStorage.setItem('token', newAccessToken);
       if (newRefreshToken) {
         localStorage.setItem('refreshToken', newRefreshToken);
@@ -54,12 +54,26 @@ axiosInstance.interceptors.request.use(
     removeRequest(config);
     addRequest(config);
 
-    const token = localStorage.getItem('token');
-    
+    let token = localStorage.getItem('token');
+
+    if (token) {
+      token = token.replace(/^"|"$/g, '');
+    }
 
     if (token && config.url !== REFRESH_URL && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`; 
+      config.headers['access-token'] = token;
+      // config.headers['Authorization'] = token;
+
+      config.headers['ngrok-skip-browser-warning'] = 'true';
+      console.log(`[请求拦截] URL: ${config.url}, Header写入Token:`, token.substring(0, 10) + '...');
+    } else {
+      console.warn(`[请求拦截] URL: ${config.url}, 未携带 Token! (Token为空或正在刷新)`);
     }
+
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => {
@@ -74,19 +88,19 @@ axiosInstance.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const config = error.config as InternalAxiosRequestConfig;
-    
+
     if (config) {
       removeRequest(config);
     }
 
     if (error.response?.status === 401 && config && config.url !== REFRESH_URL) {
-      
-    // Token 过期，尝试刷新
+
+      // Token 过期，尝试刷新
       if (isRefreshing) {
         return new Promise((resolve) => {
           requestsQueue.push((newToken) => {
             if (config.headers) {
-              config.headers['Authorization'] = newToken;
+              config.headers['access-token'] = newToken;
             }
             resolve(axiosInstance(config)); // 重新发起请求
           });
@@ -99,10 +113,10 @@ axiosInstance.interceptors.response.use(
 
         if (newToken) {
           requestsQueue.forEach((cb) => cb(newToken));
-          requestsQueue = []; 
-          
+          requestsQueue = [];
+
           if (config.headers) {
-            config.headers['Authorization'] = newToken;
+            config.headers['access-token'] = newToken;
           }
           return axiosInstance(config);
         } else {
@@ -114,7 +128,7 @@ axiosInstance.interceptors.response.use(
         window.location.href = '/login';
         return Promise.reject(error);
       } finally {
-        isRefreshing = false; 
+        isRefreshing = false;
       }
     }
 

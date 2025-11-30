@@ -1,14 +1,18 @@
 import request from '@/utils/request';
-import {JudgeData, GenerationData} from './type';
+import { JudgeData, GenerationData } from './type';
 
 /**
  * 1. AI 巩固出题
  * Method: POST
  */
-export const generateQuestion = (mistakeQuestionId: number) => {
+export const generateQuestion = (mistakeQuestionId: string | number) => {
+  const formData = new FormData();
+  formData.append('_placeholder', '');
+
   return request.post<GenerationData>({
     url: '/api/question/generation',
-    params: { mistakeQuestionId }, 
+    params: { mistakeQuestionId: String(mistakeQuestionId) },
+    data: formData,
   });
 };
 
@@ -28,7 +32,7 @@ export const judgeQuestion = (questionId: string, answer: string) => {
  * Method: POST
  */
 export const recordQuestion = (questionId: string) => {
-  return request.post<void>({ 
+  return request.post<void>({
     url: '/api/question/record',
     params: { questionId },
   });
