@@ -19,11 +19,7 @@ import { useKnowledgeGraph } from '@/hooks/useKnowledgeGraph';
 import { useKnowledgePage } from '@/hooks/useKnowledgePage';
 
 import { addSonPoint, deletePoint } from '@/services/apis/KnowledgePointApi/KnowledgePointApi';
-<<<<<<< HEAD
 import { generateQuestion, judgeQuestionStream, recordQuestion } from '@/services/apis/questionapi/questionapi';
-=======
-import { generateQuestion } from '@/services/apis/questionapi/questionapi';
->>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
 
 const scrollbarStyle = `
   .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -50,7 +46,6 @@ interface InternalLearningViewProps {
 }
 
 const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedData }: InternalLearningViewProps) => {
-<<<<<<< HEAD
   const [generatedQuestion, setGeneratedQuestion] = useState<{ questionId: string; questionContent: string; answer?: string | null } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,11 +77,6 @@ const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedD
     }
     return parts.join('').trim();
   };
-=======
-  const [generatedQuestion, setGeneratedQuestion] = useState<{ questionId: string; questionContent: string } | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
->>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
 
   const handleGenerateQuestion = async () => {
     if (mistakeIds.length === 0) {
@@ -99,17 +89,13 @@ const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedD
     setIsGenerating(true);
     setError(null);
     setGeneratedQuestion(null);
-<<<<<<< HEAD
     setJudgeResult(null);
     setJudgeError(null);
     setAnswerInput('');
-=======
->>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
 
     try {
       const res = await generateQuestion(mistakeQuestionId);
       if (res.code === 200 && res.data) {
-<<<<<<< HEAD
         const questionText = res.data.questionContent || res.data.content || '';
         if (!questionText) {
           setError('未能获取题目内容，请稍后重试');
@@ -124,9 +110,6 @@ const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedD
           setJudgeResult(null);
           setJudgeError(null);
         }
-=======
-        setGeneratedQuestion(res.data);
->>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
       } else {
         setError(res.info || '生成题目失败');
       }
@@ -237,7 +220,6 @@ const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedD
                     <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                       {generatedQuestion.questionContent}
                     </div>
-<<<<<<< HEAD
                     <div className="mt-4 space-y-3">
                       <div className="text-xs font-semibold text-slate-500 mb-1">我的答案（选择题请使用大写字母）</div>
                       <div className="flex items-center gap-2">
@@ -339,8 +321,6 @@ const InternalLearningView = ({ title, description, onBack, mistakeIds, relatedD
                         {generatedQuestion.answer}
                       </div>
                     ) : null}
-=======
->>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-400 text-sm">
