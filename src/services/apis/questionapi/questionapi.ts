@@ -133,5 +133,8 @@ export default {
   generateQuestion,
   judgeQuestion,
   recordQuestion,
+<<<<<<< HEAD
   judgeQuestionStream,
+=======
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
 };

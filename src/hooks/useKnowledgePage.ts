@@ -16,12 +16,16 @@ import {
   KnowledgePointNode,
   RelatedData,
   KnowledgeTooltip,
+<<<<<<< HEAD
   KnowledgeStatistic,
+=======
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
 } from '@/services/apis/KnowledgePointApi/type';
 
 export const useKnowledgePage = () => {
   const [activeId, setActiveId] = useState<number | string | null>(null);
   const [activeTitle, setActiveTitle] = useState('');
+<<<<<<< HEAD
 
   // 详情数据 State
   const [description, setDescription] = useState('');
@@ -31,6 +35,15 @@ export const useKnowledgePage = () => {
   const [relatedPoints, setRelatedPoints] = useState<KnowledgePointNode[]>([]);
   const [stats, setStats] = useState<KnowledgeTooltip | null>(null);
   const [statistic, setStatistic] = useState<KnowledgeStatistic | null>(null);
+=======
+  
+  const [description, setDescription] = useState('');
+  const [isMastered, setIsMastered] = useState(false);
+  const [relatedData, setRelatedData] = useState<RelatedData | null>(null);
+  const [mistakeIds, setMistakeIds] = useState<any[]>([]); 
+  const [relatedPoints, setRelatedPoints] = useState<KnowledgePointNode[]>([]);
+  const [stats, setStats] = useState<KnowledgeTooltip | null>(null);
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
   const [noteInput, setNoteInput] = useState('');
 
   const [refreshTreeTrigger, setRefreshTreeTrigger] = useState(0);
@@ -55,10 +68,17 @@ export const useKnowledgePage = () => {
         if (res.code === 200 && res.data) {
           // 渲染描述
           setDescription(res.data.content || '暂无详细描述');
+<<<<<<< HEAD
 
           // 渲染掌握状态 (奖章是否变黄)
           setIsMastered(!!res.data.isMastered);
 
+=======
+          
+          // 渲染掌握状态 (奖章是否变黄)
+          setIsMastered(!!res.data.isMastered);
+
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
           // 如果后端返回了标题，同步更新标题 (可选)
           if (res.data.keyPoints) {
             setActiveTitle(res.data.keyPoints);
@@ -73,7 +93,11 @@ export const useKnowledgePage = () => {
     };
     loadDefinition();
 
+<<<<<<< HEAD
     // 3. 并发获取其他数据 (错题、统计、关联等)
+=======
+    // 3. 并发获取其他数据 (错题、统计、关联等) - 保持原样
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
     fetchRelatedQuestionsOrNote(activeId).then((res) => {
       if (res.code === 200 && res.data) {
         setRelatedData(res.data);
@@ -88,6 +112,7 @@ export const useKnowledgePage = () => {
       if (res.code === 200 && res.data) setRelatedPoints(res.data);
     });
 
+<<<<<<< HEAD
     // 同时获取提示信息和统计信息，合并数据
     Promise.all([
       fetchTooltip(activeId),
@@ -120,6 +145,10 @@ export const useKnowledgePage = () => {
           setStats(tooltipData);
         }
       }
+=======
+    fetchTooltip(activeId).then((res) => {
+      if (res.code === 200 && res.data) setStats(res.data);
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
     });
 
   }, [activeId]);
@@ -129,6 +158,7 @@ export const useKnowledgePage = () => {
     if (!activeId) return;
     try {
       const res = await markAsMastered(activeId);
+<<<<<<< HEAD
       if (res.code === 200) {
         setIsMastered(true);
         fetchTooltip(activeId).then((tooltipRes) => {
@@ -141,11 +171,17 @@ export const useKnowledgePage = () => {
       }
     } catch (e) {
       console.error('标记为已掌握异常:', e);
+=======
+      if (res.code === 200) setIsMastered(true);
+    } catch (e) {
+      console.error(e);
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
     }
   };
 
   const handleSaveNote = async () => {
     if (!activeId) return;
+<<<<<<< HEAD
     try {
       const res = await saveNote(activeId, noteInput);
       if (res.code === 200) {
@@ -155,6 +191,9 @@ export const useKnowledgePage = () => {
     } catch (e) {
       console.error('保存笔记异常:', e);
     }
+=======
+    try { await saveNote(activeId, noteInput); } catch (e) { console.error(e); }
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
   };
 
   const handleRename = async (newName: string) => {
@@ -164,23 +203,32 @@ export const useKnowledgePage = () => {
       if (res.code === 200) {
         setActiveTitle(newName);
         setRefreshTreeTrigger(prev => prev + 1);
+<<<<<<< HEAD
       } else {
         console.error('重命名失败:', res.info || '未知错误');
       }
     } catch (e) {
       console.error('重命名异常:', e);
     }
+=======
+      }
+    } catch (e) { console.error(e); }
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
   };
 
   const handleAddChild = async (name: string, desc: string) => {
     if (!activeId || !name.trim()) return false;
     try {
+<<<<<<< HEAD
       const res = await addSonPoint(activeId, {
         pointId: String(activeId),
         pointName: name,
         pointDesc: desc,
         sonPoints: []
       });
+=======
+      const res = await addSonPoint(activeId, { pointName: name, pointDesc: desc, sonPoints: [], pointId: null });
+>>>>>>> 97d1a799d2ab78590f1f57c10d2e6c0953c240fd
       if (res && res.code === 200) {
         setRefreshTreeTrigger(prev => prev + 1);
         return true;
