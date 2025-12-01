@@ -35,6 +35,14 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { AnalysisData, QuestionItem } from '@/services/myQuestion/type';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Filters {
   keyword: string;
@@ -65,6 +73,8 @@ export default function MyQuestionPage() {
   const [errorOpen, setErrorOpen] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
   const [showCheckbox, setShowCheckbox] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [questionData, setQuestionData] = useState<QuestionBackendItem[]>([]);
   const [searchParams, setSearchParams] = useSearchParams({
     page: '1' as string,
@@ -83,18 +93,22 @@ export default function MyQuestionPage() {
     reviewTrend: [],
   });
 
-  const onClickShowCheckbox = () => {
+  const updateCheckboxOpacity = (visible: boolean) => {
     const checkboxs = document.querySelectorAll('.checkbox');
-    if (showCheckbox) {
-      checkboxs.forEach((checkbox) => {
-        (checkbox as HTMLElement).style.opacity = '1';
-      });
-    } else {
-      checkboxs.forEach((checkbox) => {
-        (checkbox as HTMLElement).style.opacity = '0';
-      });
-    }
-    setShowCheckbox(!showCheckbox);
+    checkboxs.forEach((checkbox) => {
+      (checkbox as HTMLElement).style.opacity = visible ? '1' : '0';
+    });
+  };
+
+  const hideCheckboxes = () => {
+    updateCheckboxOpacity(false);
+    setShowCheckbox(false);
+  };
+
+  const onClickShowCheckbox = () => {
+    const nextVisible = !showCheckbox;
+    updateCheckboxOpacity(nextVisible);
+    setShowCheckbox(nextVisible);
   };
 
   const mapErrorReason = (item: QuestionItem) => {
@@ -205,9 +219,34 @@ export default function MyQuestionPage() {
   };
 
   const handleDelete = () => {
-    deleteQuestion(selectedQuestions).then((res) => {
-      console.log(res);
-    });
+    setDeleteDialogOpen(true);
+  };
+
+  const refreshList = () => {
+    setFilters((prev) => ({ ...prev }));
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedQuestions.length) return;
+    try {
+      setIsDeleting(true);
+      await deleteQuestion(selectedQuestions);
+    } catch (error) {
+      console.error('delete error', error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      hideCheckboxes();
+      setSelectedQuestions([]);
+      refreshList();
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    hideCheckboxes();
+    setSelectedQuestions([]);
+    refreshList();
   };
 
   return (
@@ -379,7 +418,7 @@ export default function MyQuestionPage() {
 
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <div className="flex-1">
+                      <div className="flex-1 overflow-hidden">
                         <div className="w-full aspect-video bg-muted rounded-md mb-2 flex items-center justify-center cursor-pointer">
                           <span className="text-muted-foreground text-sm overflow-hidden text-ellipsis whitespace-nowrap">
                             {question.question_content}
@@ -489,6 +528,39 @@ export default function MyQuestionPage() {
           </div>
         </div>
       </div>
+      <Dialog open={deleteDialogOpen}>
+        <DialogContent
+          showCloseButton={false}
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              确认删除所选的 {selectedQuestions.length}{' '}
+              个错题吗？删除后无法恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+              className="cursor-pointer"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="cursor-pointer"
+            >
+              {isDeleting ? '删除中...' : '确认删除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

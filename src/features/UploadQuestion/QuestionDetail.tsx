@@ -14,9 +14,11 @@ import {
   submitStudyNote,
 } from '@/services/errorReason/errorReason';
 import { AiChatPanel } from '@/components/business/AiChatPanel';
+import { getKnowledge } from '../../services/ocr/uploadQuestion';
 
 export default function QuestionDetailPage() {
   const { result } = useLocation().state;
+  console.log(result);
   const [originalQuestion] = useState(result.data.questionText);
 
   // AI 流式解答
@@ -36,6 +38,8 @@ export default function QuestionDetailPage() {
     { id: 'otherReason', label: '其他', color: 'bg-primary' },
   ];
 
+  const [knowledge, setKnowledge] = useState('深度识别中...');
+
   // 请求 AI 流式解答
   useEffect(() => {
     const controller = new AbortController();
@@ -54,6 +58,10 @@ export default function QuestionDetailPage() {
       },
     }).finally(() => {
       setIsAILoading(false);
+    });
+
+    getKnowledge(result.data.questionId).then((res) => {
+      setKnowledge(res.data);
     });
 
     return () => {
@@ -97,7 +105,7 @@ export default function QuestionDetailPage() {
   };
   return (
     <div className="bg-background p-6 h-[93svh] overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full overflow-hidden">
         {/* 左侧区域 - 原题和AI题解 */}
         <div className="lg:col-span-5 grid grid-rows-[1fr_1fr_auto] gap-4 h-full overflow-hidden">
           {/* 原题卡片 */}
@@ -221,7 +229,7 @@ export default function QuestionDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center py-8 text-muted-foreground">
-                深度识别中...
+                {knowledge}
               </div>
             </CardContent>
           </Card>

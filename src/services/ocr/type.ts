@@ -8,3 +8,10 @@ export interface ExtractFirstResponse {
     userId: string;
   };
 }
+
+export interface knowledgeResponse {
+  traceId: string;
+  code: number;
+  info: string;
+  data: string;
+}
