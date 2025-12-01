@@ -1,5 +1,5 @@
 export interface KnowledgePointNode {
-  id: number;
+  id: number | string; // 支持数字和字符串（UUID）格式
   keyPoints: string;
   hasChildren?: boolean;
 }
@@ -11,8 +11,8 @@ export interface KnowledgeTooltip {
 }
 
 export interface QuestionItem {
-  id: number;
-  content: string;
+  id: string | number;
+  question: string;
 }
 
 export interface RelatedData {
@@ -21,14 +21,17 @@ export interface RelatedData {
 }
 
 export interface AddSonPointParams {
+  pointId?: string | null;
   pointName: string;
   pointDesc?: string;
-  sonPoints?: AddSonPointParams[];
+  sonPoints?: any[];
+  subject?: string;
 }
 
 export interface KnowledgeDefinition {
   content?: string;
   isMastered?: boolean;
+  keyPoints?: string;
   [key: string]: unknown;
 }
 
@@ -36,5 +39,7 @@ export interface KnowledgeStatistic {
   totalCount?: number;
   wrongCount?: number;
   solvedCount?: number;
-  [key: string]: number | undefined;
+  count?: number;
+  message?: string;
+  [key: string]: number | string | undefined; // 支持字符串（如"暂无相关错题"）
 }

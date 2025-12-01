@@ -1,6 +1,8 @@
 export interface GenerationData {
   questionId: string;
-  questionContent: string;
+  questionContent?: string;
+  content?: string;
+  answer?: string | null;
 }
 
 export interface JudgeData {

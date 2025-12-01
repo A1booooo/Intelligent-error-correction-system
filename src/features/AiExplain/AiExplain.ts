@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { solveStream } from '@/services/apis/aiapi/aiapi';
 
-export interface Message {  
+export interface Message {
   id: string;
   role: 'user' | 'ai';
   content: string;
   isStreaming?: boolean;
 }
-// 1. 生成唯一ID的工具函数 
+// 1. 生成唯一ID的工具函数
 const generateId = () => {
   return Date.now().toString() + Math.random().toString(36).slice(2, 9);
 };
@@ -36,7 +36,7 @@ export const useAiExplain = () => {
       abortControllerRef.current = null;
     }
     setIsLoading(false);
-    
+
     setMessages((prev) => {
       const newArr = [...prev];
       if (newArr.length > 0) {
@@ -125,7 +125,7 @@ export const useAiExplain = () => {
     if (messages.length === 0) return;
     setMessages([]);
     setInput('');
-    handleStop(); 
+    handleStop();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
