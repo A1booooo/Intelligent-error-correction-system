@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ChevronDown, Trash2 } from 'lucide-react';
@@ -33,38 +34,29 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { AnalysisData } from '@/services/myQuestion/type';
-
-interface QuestionBackendItem {
-  id: number;
-  subject: string;
-  is_careless: boolean;
-  is_knowledge_gap: boolean;
-  is_calculation_error: boolean;
-  is_time_shortage: boolean;
-  update_time: string;
-  question_content: string;
-}
-
-interface QuestionItem {
-  id: number;
-  subject: string;
-  errorReason: string;
-  date: string;
-  content: string;
-}
+import { AnalysisData, QuestionItem } from '@/services/myQuestion/type';
 
 interface Filters {
+  keyword: string;
   subjects: string[];
-  errorTypes: string[];
-  timeRanges: string[];
+  errorType: string;
+  timeRange: string;
   page: number;
   size: number;
 }
 
-interface QuestionListResponse {
-  content?: QuestionBackendItem[];
-  [key: string]: unknown;
+interface QuestionBackendItem {
+  id: number;
+  question_content: string;
+  subject: string;
+  update_time: string;
+  is_careless: number;
+  is_unfamiliar: number;
+  is_calculate_err: number;
+  is_time_shortage: number;
+  other_reason: string;
+  knowledge_desc: string | null;
+  errorReason: string;
 }
 
 export default function MyQuestionPage() {
@@ -73,14 +65,15 @@ export default function MyQuestionPage() {
   const [errorOpen, setErrorOpen] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
   const [showCheckbox, setShowCheckbox] = useState(false);
-  const [questionData, setQuestionData] = useState<QuestionItem[]>([]);
+  const [questionData, setQuestionData] = useState<QuestionBackendItem[]>([]);
   const [searchParams, setSearchParams] = useSearchParams({
     page: '1' as string,
   });
   const [filters, setFilters] = useState<Filters>({
+    keyword: '',
     subjects: [],
-    errorTypes: [],
-    timeRanges: [],
+    errorType: '',
+    timeRange: 'THIS_WEEK',
     page: 1,
     size: 6,
   });
@@ -104,31 +97,42 @@ export default function MyQuestionPage() {
     setShowCheckbox(!showCheckbox);
   };
 
-  const mapErrorReason = (item: QuestionBackendItem) => {
-    if (item.is_careless) {
+  const mapErrorReason = (item: QuestionItem) => {
+    if (item.is_careless === 1) {
       return '粗心马虎';
-    } else if (item.is_knowledge_gap) {
+    } else if (item.is_unfamiliar === 1) {
       return '知识点不熟悉';
-    } else if (item.is_calculation_error) {
+    } else if (item.is_calculate_err === 1) {
       return '计算错误';
-    } else if (item.is_time_shortage) {
+    } else if (item.is_time_shortage === 1) {
       return '时间不够';
     } else {
       return '其他';
     }
   };
 
-  const toggleFilterValue = (key: keyof Filters, value: string) => {
+  const toggleSubjectValue = (value: string) => {
     setFilters((prev: Filters) => {
-      const arr = prev[key] as string[];
+      const arr = prev.subjects;
       const exists = arr.includes(value);
 
       return {
         ...prev,
-        [key]: exists ? arr.filter((v) => v !== value) : [...arr, value],
+        subjects: exists ? arr.filter((v) => v !== value) : [...arr, value],
         page: 1,
       };
     });
+  };
+
+  const setSingleFilterValue = (
+    key: 'errorType' | 'timeRange',
+    value: string,
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev[key] === value ? '' : value,
+      page: 1,
+    }));
   };
 
   // 初始化：从 URL 设置 filters
@@ -140,31 +144,43 @@ export default function MyQuestionPage() {
   useEffect(() => {
     const fetchData = async () => {
       const params = {
-        subjects: filters.subjects,
-        errorTypes: filters.errorTypes,
-        timeRanges: filters.timeRanges,
+        keyword: filters.keyword,
+        subject: filters.subjects[0] ?? '',
+        errorType: filters.errorType,
+        timeRange: filters.timeRange,
         page: filters.page - 1,
         size: filters.size,
       };
+      console.log(params);
 
       try {
-        const res = (await getQuestionList(params)) as QuestionListResponse;
+        const res = await getQuestionList(params);
+        console.log(res);
+        const content = res?.data?.content ?? [];
+        const mapped = content.map((item: QuestionItem) => ({
+          id: item.id,
+          subject: item.subject ?? '未分类',
+          update_time: item.update_time,
+          question_content: item.question_content,
+          is_careless: item.is_careless,
+          is_unfamiliar: item.is_unfamiliar,
+          is_calculate_err: item.is_calculate_err,
+          is_time_shortage: item.is_time_shortage,
+          other_reason: item.other_reason,
+          knowledge_desc: item.knowledge_desc,
+          errorReason: mapErrorReason(item),
+        }));
 
-        if (res?.content) {
-          setQuestionData(
-            res.content.map((item: QuestionBackendItem) => ({
-              id: item.id,
-              subject: item.subject,
-              errorReason: mapErrorReason(item),
-              date: item.update_time,
-              content: item.question_content,
-            })),
-          );
-        }
+        setQuestionData(mapped);
 
         const stat = await getStatistics();
-        if (stat) setStatistics(stat);
+        console.log(stat);
+        if (stat) setStatistics(stat.data);
       } catch (e) {
+        if (axios.isCancel(e)) {
+          // 请求取消通常由快速切换筛选条件触发，这里静默处理以避免干扰
+          return;
+        }
         console.error('fetch error', e);
       }
     };
@@ -200,7 +216,13 @@ export default function MyQuestionPage() {
         <div className="lg:col-span-3 flex flex-col gap-4 border border-dotted rounded-lg p-4 overflow-y-auto">
           {/* 搜索框 */}
           <InputGroup className="h-12 ring-0 ring-offset-0 focus-within:ring-0 focus-within:ring-offset-0 focus-within:!ring-0 focus-within:!ring-offset-0 focus-within:!border-input">
-            <InputGroupInput placeholder="搜索" className="h-full" />
+            <InputGroupInput
+              placeholder="搜索"
+              className="h-full"
+              onChange={(e) =>
+                setFilters({ ...filters, keyword: e.target.value })
+              }
+            />
             <InputGroupAddon>
               <Search className="size-5" />
             </InputGroupAddon>
@@ -219,25 +241,25 @@ export default function MyQuestionPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div
                   className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.subjects.includes('数学') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('subjects', '数学')}
+                  onClick={() => toggleSubjectValue('数学')}
                 >
                   数学
                 </div>
                 <div
                   className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.subjects.includes('物理') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('subjects', '物理')}
+                  onClick={() => toggleSubjectValue('物理')}
                 >
                   物理
                 </div>
                 <div
                   className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.subjects.includes('化学') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('subjects', '化学')}
+                  onClick={() => toggleSubjectValue('化学')}
                 >
                   化学
                 </div>
                 <div
                   className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.subjects.includes('英语') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('subjects', '英语')}
+                  onClick={() => toggleSubjectValue('英语')}
                 >
                   英语
                 </div>
@@ -257,28 +279,30 @@ export default function MyQuestionPage() {
             <CollapsibleContent className="mt-2 space-y-2 px-2">
               <div className="grid grid-cols-2 gap-6">
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRanges.includes('THIS_WEEK') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('timeRanges', 'THIS_WEEK')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRange === 'THIS_WEEK' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() => setSingleFilterValue('timeRange', 'THIS_WEEK')}
                 >
                   本周
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRanges.includes('THIS_MONTH') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('timeRanges', 'THIS_MONTH')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRange === 'THIS_MONTH' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() =>
+                    setSingleFilterValue('timeRange', 'THIS_MONTH')
+                  }
                 >
                   本月
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRanges.includes('THIS_QUARTER') ? 'bg-primary text-primary-foreground' : ''}`}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRange === 'THIS_QUARTER' ? 'bg-primary text-primary-foreground' : ''}`}
                   onClick={() =>
-                    toggleFilterValue('timeRanges', 'THIS_QUARTER')
+                    setSingleFilterValue('timeRange', 'THIS_QUARTER')
                   }
                 >
                   本季度
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRanges.includes('THIS_YEAR') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('timeRanges', 'THIS_YEAR')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.timeRange === 'THIS_YEAR' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() => setSingleFilterValue('timeRange', 'THIS_YEAR')}
                 >
                   本年
                 </div>
@@ -298,28 +322,28 @@ export default function MyQuestionPage() {
             <CollapsibleContent className="mt-2 space-y-2 px-2">
               <div className="grid grid-cols-2 gap-6">
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorTypes.includes('粗心马虎') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('errorTypes', '粗心马虎')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorType === '粗心马虎' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() => setSingleFilterValue('errorType', '粗心马虎')}
                 >
                   粗心马虎
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorTypes.includes('知识点不熟悉') ? 'bg-primary text-primary-foreground' : ''}`}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorType === '知识点不熟悉' ? 'bg-primary text-primary-foreground' : ''}`}
                   onClick={() =>
-                    toggleFilterValue('errorTypes', '知识点不熟悉')
+                    setSingleFilterValue('errorType', '知识点不熟悉')
                   }
                 >
                   知识点不熟悉
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorTypes.includes('计算错误') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('errorTypes', '计算错误')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorType === '计算错误' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() => setSingleFilterValue('errorType', '计算错误')}
                 >
                   计算错误
                 </div>
                 <div
-                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorTypes.includes('时间不够') ? 'bg-primary text-primary-foreground' : ''}`}
-                  onClick={() => toggleFilterValue('errorTypes', '时间不够')}
+                  className={`text-sm text-muted-foreground cursor-pointer text-center border p-2 ${filters.errorType === '时间不够' ? 'bg-primary text-primary-foreground' : ''}`}
+                  onClick={() => setSingleFilterValue('errorType', '时间不够')}
                 >
                   时间不够
                 </div>
@@ -331,7 +355,7 @@ export default function MyQuestionPage() {
         <div className="lg:col-span-6 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto mb-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {questionData.map((question: QuestionItem) => (
+              {questionData.map((question: QuestionBackendItem) => (
                 <Card
                   key={question.id}
                   className="hover:shadow-md transition-shadow relative"
@@ -357,8 +381,8 @@ export default function MyQuestionPage() {
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
                         <div className="w-full aspect-video bg-muted rounded-md mb-2 flex items-center justify-center cursor-pointer">
-                          <span className="text-muted-foreground text-sm">
-                            题目预览
+                          <span className="text-muted-foreground text-sm overflow-hidden text-ellipsis whitespace-nowrap">
+                            {question.question_content}
                           </span>
                         </div>
 
@@ -371,7 +395,7 @@ export default function MyQuestionPage() {
                           </div>
 
                           <span className="text-muted-foreground">
-                            {question.date}
+                            {question.update_time}
                           </span>
                         </div>
                       </div>

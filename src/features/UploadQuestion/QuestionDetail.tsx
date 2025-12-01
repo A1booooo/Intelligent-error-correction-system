@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,9 +11,9 @@ import { solveStream } from '@/services/apis/aiapi';
 import {
   toggleErrorReason,
   updateOtherReason,
+  submitStudyNote,
 } from '@/services/errorReason/errorReason';
 import { AiChatPanel } from '@/components/business/AiChatPanel';
-import { recordQuestion } from '@/services/questionSetting/questionSetting';
 
 export default function QuestionDetailPage() {
   const { result } = useLocation().state;
@@ -28,7 +27,7 @@ export default function QuestionDetailPage() {
   // 错因分析
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [otherReasonDetail, setOtherReasonDetail] = useState('');
-
+  const [studyNote, setStudyNote] = useState('');
   const errorReasonsList = [
     { id: 'isCareless', label: '粗心马虎', color: 'bg-primary' },
     { id: 'isUnfamiliar', label: '知识点不熟悉', color: 'bg-primary' },
@@ -55,9 +54,6 @@ export default function QuestionDetailPage() {
       },
     }).finally(() => {
       setIsAILoading(false);
-      recordQuestion(result.data.questionId).then((res) =>
-        console.log('记录题目：', res),
-      );
     });
 
     return () => {
@@ -92,6 +88,13 @@ export default function QuestionDetailPage() {
     }).then((res) => console.log('其他原因提交：', res));
   };
 
+  const handleStudyNoteBlur = () => {
+    if (!studyNote.trim()) return;
+    submitStudyNote({
+      questionId: result.data.questionId,
+      studyNote: studyNote.trim(),
+    }).then((res) => console.log('笔记提交：', res));
+  };
   return (
     <div className="bg-background p-6 h-[93svh] overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
@@ -232,6 +235,9 @@ export default function QuestionDetailPage() {
               <Textarea
                 placeholder="请输入笔记"
                 className="h-[125px] resize-none"
+                value={studyNote}
+                onChange={(e) => setStudyNote(e.target.value)}
+                onBlur={handleStudyNoteBlur}
               />
             </CardContent>
           </Card>

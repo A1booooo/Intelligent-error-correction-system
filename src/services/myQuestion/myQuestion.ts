@@ -1,8 +1,12 @@
 import request from '../../utils/request';
-import { AnalysisData, QuestionListParams } from './type';
+import {
+  QuestionListParams,
+  QuestionListResponse,
+  StatisticsResponse,
+} from './type';
 
 export async function getQuestionList(params: QuestionListParams) {
-  const res = await request.get({
+  const res = (await request.get)<QuestionListResponse>({
     url: '/api/v1/feedback/review/list',
     params,
   });
@@ -16,8 +20,8 @@ export function deleteQuestion(questionIds: number[]) {
   });
 }
 
-export async function getStatistics(): Promise<AnalysisData> {
-  const res = await request.get<AnalysisData>({
+export async function getStatistics() {
+  const res = (await request.get)<StatisticsResponse>({
     url: '/api/v1/feedback/review/statistics',
   });
   return res;
